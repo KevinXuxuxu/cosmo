@@ -1,12 +1,8 @@
-from engine import Triangle, Camera
 from utils import Player
-from model import cube, square
-import numpy as np
+import scenes
 
 def main():
-    ts, c, f = cube()
-    p = Player()
-    p.play_f(f)
+    Player().play_f(scenes.cube(True)[2])
 
 
 if __name__ == '__main__':

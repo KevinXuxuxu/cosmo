@@ -1,10 +1,18 @@
 import numpy as np
 
+BRIGHT_TILES = [".", ",", ":", ";", "!", "~", "-", "+", "=", "*", "#", "%", "@", "M"]
+BL = len(BRIGHT_TILES)
+
+def unit(v):
+    l = np.linalg.norm(v)
+    return v / l
+    
+
 def rotate_point_around_axis(P, P0, d, theta):
     # Translate point P to the origin relative to P0
     P_rel = P - P0
     # Normalize the direction vector d
-    d_norm = d / np.linalg.norm(d)
+    d_norm = unit(d)
     # Compute the rotated point using Rodrigues' rotation formula
     cos_theta = np.cos(theta)
     sin_theta = np.sin(theta)
@@ -35,7 +43,7 @@ class Triangle:
         self.dot01 = np.dot(self.v0, self.v1)
         self.dot11 = np.dot(self.v1, self.v1)
         self.invDenom = 1 / (self.dot00 * self.dot11 - self.dot01 * self.dot01)
-        self.n = np.cross(self.v1, self.v0)
+        self.n = unit(np.cross(self.v1, self.v0))
 
     def is_point_in(self, P):
         v2 = P - self.A
@@ -66,6 +74,21 @@ class Triangle:
         self._preprocess()
 
 
+class DirectLighting:
+
+    def __init__(self, d):
+        self.d = unit(d)
+
+    def light(self, n):
+        if np.dot(self.d, n) > -1e-6:
+            return 0
+        # assume all unit vectors
+        return -np.dot(self.d, n)
+
+    def type(self):
+        return "Direct"
+
+
 class Camera:
 
     def __init__(self, f, d, x, y, n):
@@ -85,10 +108,14 @@ class Camera:
             -self.x/2 + j * self.dx,
             -self.y/2 + i * self.dy
         ])
-        return pix - self.P0
+        return unit(pix - self.P0)
 
-    def look(self, ts):
+    def look(self, ts, lighting = None):
         r = [[' ']*self.m for _ in range(self.n)]
+        if lighting and lighting.type() == "Direct":
+            for t in ts:
+                brightness = lighting.light(t.n)
+                t.color = BRIGHT_TILES[int(brightness*BL)]
         for i in range(self.n):
             for j in range(self.m):
                 for t in ts: # check all triangles
