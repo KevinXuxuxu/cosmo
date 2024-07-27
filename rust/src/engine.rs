@@ -1,12 +1,13 @@
 use glam::f32::Vec3;
 
+pub type Color = char;
+
 pub trait Updatable {
     fn update(&mut self, t: f32);
 }
 
 pub trait Visible {
-    fn get_color(&self) -> char;
-    fn intersect(&self, p0: Vec3, d: Vec3) -> bool;
+    fn intersect(&self, p0: Vec3, d: Vec3) -> Option<Color>;
 }
 
 #[derive(Default)]
@@ -14,7 +15,7 @@ pub struct Triangle {
     a: Vec3,
     b: Vec3,
     c: Vec3,
-    color: char,
+    color: Color,
     v0: Vec3,
     v1: Vec3,
     dot00: f32,
@@ -25,7 +26,7 @@ pub struct Triangle {
 }
 
 impl Triangle {
-    pub fn new(a: Vec3, b: Vec3, c: Vec3, color: char) -> Self {
+    pub fn new(a: Vec3, b: Vec3, c: Vec3, color: Color) -> Self {
         let mut t = Triangle {
             a,
             b,
@@ -58,17 +59,17 @@ impl Triangle {
 }
 
 impl Visible for Triangle {
-    fn intersect(&self, p0: Vec3, d: Vec3) -> bool {
+    fn intersect(&self, p0: Vec3, d: Vec3) -> Option<Color> {
         let denom = self.n.dot(d);
         if denom > -1e-6 {
-            return false;
+            return None;
         }
         let t = self.n.dot(self.a - p0) / denom;
         let p = p0 + t * d;
-        self.contains_point(p)
-    }
-
-    fn get_color(&self) -> char {
-        return self.color;
+        if self.contains_point(p) {
+            Some(self.color)
+        } else {
+            None
+        }
     }
 }

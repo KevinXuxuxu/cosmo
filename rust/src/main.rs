@@ -3,6 +3,7 @@ use std::thread;
 use std::time::Duration;
 use std::time::Instant;
 
+use crate::engine::Color;
 use crate::engine::Visible;
 use crate::loader::parse_file;
 
@@ -17,7 +18,7 @@ struct Player {
     // fr: i32,
     w: usize,
     h: usize,
-    a: Vec<Vec<char>>,
+    a: Vec<Vec<Color>>,
     t: f32,
     dt: f32,
     dt_millis: u64,
@@ -64,9 +65,12 @@ impl Player {
                 let y = -(self.w as f32) / 2. + (j as f32);
                 for obj in &self.objects {
                     // TODO: add covering detect to support multiple objects
-                    if obj.intersect(Vec3::new(0., y, z), Vec3::new(-1., 0., 0.)) {
-                        self.a[i][j] = obj.get_color();
-                        break;
+                    match obj.intersect(Vec3::new(0., y, z), Vec3::new(-1., 0., 0.)) {
+                        Some(c) => {
+                            self.a[i][j] = c;
+                            break;
+                        }
+                        None => {}
                     }
                 }
             }
@@ -96,7 +100,8 @@ impl Player {
 
 fn main() {
     let objs = parse_file("scenes/square.cos");
-    let mut p = Player::new(24, 30, 30);
+    // Somehow setting hight to odd number will cause fuzz edge
+    let mut p = Player::new(24, 30, 20);
     for obj in objs {
         p.add_object(obj);
     }
