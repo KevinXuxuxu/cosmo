@@ -1,0 +1,6 @@
+P A 0 -5 5
+P B 0 5 5
+P C 0 5 -5
+P D 0 -5 -5
+T A C B @
+T A D C .

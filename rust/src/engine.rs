@@ -5,10 +5,11 @@ pub trait Updatable {
 }
 
 pub trait Visible {
+    fn get_color(&self) -> char;
     fn intersect(&self, p0: Vec3, d: Vec3) -> bool;
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct Triangle {
     a: Vec3,
     b: Vec3,
@@ -20,12 +21,18 @@ pub struct Triangle {
     dot01: f32,
     dot11: f32,
     inv_denom: f32,
-    n: Vec3
+    n: Vec3,
 }
 
 impl Triangle {
-    fn new(a: Vec3, b: Vec3, c: Vec3) -> Self {
-        let mut t = Triangle {a, b, c, ..Default::default()};
+    pub fn new(a: Vec3, b: Vec3, c: Vec3, color: char) -> Self {
+        let mut t = Triangle {
+            a,
+            b,
+            c,
+            color,
+            ..Default::default()
+        };
         t.process();
         t
     }
@@ -48,14 +55,20 @@ impl Triangle {
         let v = (self.dot00 * dot12 - self.dot01 * dot02) * self.inv_denom;
         u >= 0. && v >= 0. && u + v < 1.
     }
+}
 
-    pub fn intersect(&self, p0: Vec3, d: Vec3) -> bool {
+impl Visible for Triangle {
+    fn intersect(&self, p0: Vec3, d: Vec3) -> bool {
         let denom = self.n.dot(d);
-        if denom >-1e-6 {
+        if denom > -1e-6 {
             return false;
         }
         let t = self.n.dot(self.a - p0) / denom;
         let p = p0 + t * d;
         self.contains_point(p)
+    }
+
+    fn get_color(&self) -> char {
+        return self.color;
     }
 }

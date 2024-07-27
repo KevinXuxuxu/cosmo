@@ -1,15 +1,19 @@
+use glam::f32::Vec3;
 use std::thread;
 use std::time::Duration;
 use std::time::Instant;
 
 use crate::engine::Visible;
+use crate::loader::parse_file;
 
 pub mod engine;
+pub mod loader;
 
 const CURSOR_UP: &str = "\x1B[F";
 const CLEAR_LINE: &str = "\x1B[K";
 
-struct Player<'a> {
+#[derive(Default)]
+struct Player {
     // fr: i32,
     w: usize,
     h: usize,
@@ -17,22 +21,31 @@ struct Player<'a> {
     t: f32,
     dt: f32,
     dt_millis: u64,
-    objects: Vec<&'a dyn Visible>
+    objects: Vec<Box<dyn Visible>>,
 }
 
-fn udiff(a: usize, b: usize) -> usize {
-    return if a > b {a-b} else {b-a};
-}
+// fn udiff(a: usize, b: usize) -> usize {
+//     return if a > b { a - b } else { b - a };
+// }
 
-impl Player<'_> {
+impl Player {
     fn new(fr: i32, w: usize, h: usize) -> Self {
         let empty_str = vec![' '; w];
         let a = vec![empty_str; h];
-        let t = 0.0;
         let dt = 1.0 / (fr as f32);
         let dt_millis = (dt * 1000.0) as u64;
-        let objects = vec![];
-        Player { w, h, a, t, dt, dt_millis, objects}
+        Player {
+            w,
+            h,
+            a,
+            dt,
+            dt_millis,
+            ..Default::default()
+        }
+    }
+
+    pub fn add_object(&mut self, obj: Box<dyn Visible>) {
+        self.objects.push(obj);
     }
 
     pub fn render(&self) {
@@ -44,14 +57,17 @@ impl Player<'_> {
     }
 
     pub fn update(&mut self) {
+        // TODO: update logic
         for i in 1..self.h {
-            let i_f32 = (udiff(i, self.h/2) as f32).abs() * 2.0;
+            let z = ((self.h as f32) / 2. - (i as f32)) * 2.;
             for j in 0..self.w {
-                let j_f32 = (udiff(j, self.w/2) as f32).abs();
-                if (i_f32 * i_f32 + j_f32 * j_f32 - self.t * self.t).abs() < 30.0 {
-                    self.a[i][j] = '#';
-                } else {
-                    self.a[i][j] = ' ';
+                let y = -(self.w as f32) / 2. + (j as f32);
+                for obj in &self.objects {
+                    // TODO: add covering detect to support multiple objects
+                    if obj.intersect(Vec3::new(0., y, z), Vec3::new(-1., 0., 0.)) {
+                        self.a[i][j] = obj.get_color();
+                        break;
+                    }
                 }
             }
         }
@@ -64,7 +80,12 @@ impl Player<'_> {
             self.render();
             let compute_t_millis = start.elapsed().as_millis() as u64;
             self.t += self.dt;
-            println!("{}compute_time: {} wait_time: {}", CLEAR_LINE, compute_t_millis, self.dt_millis - compute_t_millis);
+            println!(
+                "{}compute_time: {} wait_time: {}",
+                CLEAR_LINE,
+                compute_t_millis,
+                self.dt_millis - compute_t_millis
+            );
             if self.t > duration {
                 break;
             }
@@ -74,6 +95,10 @@ impl Player<'_> {
 }
 
 fn main() {
+    let objs = parse_file("scenes/square.cos");
     let mut p = Player::new(24, 30, 30);
-    p.run(20.);
+    for obj in objs {
+        p.add_object(obj);
+    }
+    p.run(5.);
 }
