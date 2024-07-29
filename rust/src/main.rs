@@ -4,11 +4,12 @@ use std::time::Duration;
 use std::time::Instant;
 
 use crate::engine::Color;
-use crate::engine::Visible;
+use crate::engine::Thing;
 use crate::loader::parse_file;
 
 pub mod engine;
 pub mod loader;
+pub mod movement;
 
 const CURSOR_UP: &str = "\x1B[F";
 const CLEAR_LINE: &str = "\x1B[K";
@@ -22,7 +23,7 @@ struct Player {
     t: f32,
     dt: f32,
     dt_millis: u64,
-    objects: Vec<Box<dyn Visible>>,
+    objects: Vec<Box<dyn Thing>>,
 }
 
 // fn udiff(a: usize, b: usize) -> usize {
@@ -45,7 +46,7 @@ impl Player {
         }
     }
 
-    pub fn add_object(&mut self, obj: Box<dyn Visible>) {
+    pub fn add_object(&mut self, obj: Box<dyn Thing>) {
         self.objects.push(obj);
     }
 
@@ -58,10 +59,16 @@ impl Player {
     }
 
     pub fn update(&mut self) {
-        // TODO: update logic
+        // Update objects
+        for obj in &mut self.objects {
+            obj.update(self.t, self.dt);
+        }
+
+        // Render
         for i in 1..self.h {
             let z = ((self.h as f32) / 2. - (i as f32)) * 2.;
             for j in 0..self.w {
+                self.a[i][j] = ' ';
                 let y = -(self.w as f32) / 2. + (j as f32);
                 for obj in &self.objects {
                     // TODO: add covering detect to support multiple objects
@@ -101,9 +108,9 @@ impl Player {
 fn main() {
     let objs = parse_file("scenes/square.cos");
     // Somehow setting hight to odd number will cause fuzz edge
-    let mut p = Player::new(24, 30, 20);
+    let mut p = Player::new(24, 100, 50);
     for obj in objs {
         p.add_object(obj);
     }
-    p.run(5.);
+    p.run(20.);
 }

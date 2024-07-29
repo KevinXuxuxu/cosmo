@@ -1,14 +1,18 @@
 use glam::f32::Vec3;
 
+use crate::movement::Movement;
+
 pub type Color = char;
 
 pub trait Updatable {
-    fn update(&mut self, t: f32);
+    fn update(&mut self, t: f32, dt: f32);
 }
 
 pub trait Visible {
     fn intersect(&self, p0: Vec3, d: Vec3) -> Option<Color>;
 }
+
+pub trait Thing: Updatable + Visible {}
 
 #[derive(Default)]
 pub struct Triangle {
@@ -23,15 +27,17 @@ pub struct Triangle {
     dot11: f32,
     inv_denom: f32,
     n: Vec3,
+    m: Option<Box<dyn Movement>>,
 }
 
 impl Triangle {
-    pub fn new(a: Vec3, b: Vec3, c: Vec3, color: Color) -> Self {
+    pub fn new(a: Vec3, b: Vec3, c: Vec3, color: Color, m: Option<Box<dyn Movement>>) -> Self {
         let mut t = Triangle {
             a,
             b,
             c,
             color,
+            m,
             ..Default::default()
         };
         t.process();
@@ -73,3 +79,19 @@ impl Visible for Triangle {
         }
     }
 }
+
+impl Updatable for Triangle {
+    fn update(&mut self, t: f32, dt: f32) {
+        match &self.m {
+            Some(mv) => {
+                mv.update(dt, &mut self.a);
+                mv.update(dt, &mut self.b);
+                mv.update(dt, &mut self.c);
+                self.process();
+            }
+            None => {}
+        };
+    }
+}
+
+impl Thing for Triangle {}
