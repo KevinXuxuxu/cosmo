@@ -1,7 +1,9 @@
-use glam::f32::Vec3;
 use std::thread;
 use std::time::Duration;
 use std::time::Instant;
+
+use clap::Parser;
+use glam::f32::Vec3;
 
 use crate::engine::Color;
 use crate::engine::Thing;
@@ -25,10 +27,6 @@ struct Player {
     dt_millis: u64,
     objects: Vec<Box<dyn Thing>>,
 }
-
-// fn udiff(a: usize, b: usize) -> usize {
-//     return if a > b { a - b } else { b - a };
-// }
 
 impl Player {
     fn new(fr: i32, w: usize, h: usize) -> Self {
@@ -105,12 +103,40 @@ impl Player {
     }
 }
 
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    #[arg(short, long)]
+    filename: String,
+
+    #[arg(long, default_value_t = 24)]
+    fr: i32,
+
+    #[arg(short, long)]
+    size: String,
+
+    #[arg(short, long)]
+    duration: f32,
+}
+
+fn parse_size(v: &String) -> (usize, usize) {
+    let pair: Vec<_> = v.split(',').collect();
+    let w = pair[0].parse::<usize>().unwrap();
+    let h = pair[1].parse::<usize>().unwrap();
+    (w, h)
+}
+
 fn main() {
-    let objs = parse_file("scenes/square.cos");
+    let args = Args::parse();
+    let (w, h) = parse_size(&args.size);
+
     // Somehow setting hight to odd number will cause fuzz edge
-    let mut p = Player::new(24, 100, 50);
+    let mut p = Player::new(args.fr, w, h);
+
+    let objs = parse_file(&args.filename);
     for obj in objs {
         p.add_object(obj);
     }
-    p.run(20.);
+
+    p.run(args.duration);
 }
