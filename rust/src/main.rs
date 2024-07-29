@@ -83,23 +83,29 @@ impl Player {
     }
 
     pub fn run(&mut self, duration: f32) {
+        let mut total_wait: u64 = 0;
+        let mut total_compute: u64 = 0;
         loop {
             let start = Instant::now();
             self.update();
             self.render();
             let compute_t_millis = start.elapsed().as_millis() as u64;
             self.t += self.dt;
+            let wait_t_millis = if self.dt_millis >= compute_t_millis {self.dt_millis - compute_t_millis} else {0};
             println!(
                 "{}compute_time: {} wait_time: {}",
                 CLEAR_LINE,
                 compute_t_millis,
-                self.dt_millis - compute_t_millis
+                wait_t_millis
             );
+            total_compute += compute_t_millis;
+            total_wait += wait_t_millis;
             if self.t > duration {
                 break;
             }
-            thread::sleep(Duration::from_millis(self.dt_millis - compute_t_millis));
+            thread::sleep(Duration::from_millis(wait_t_millis));
         }
+        println!("total_compute: {} total_wait: {}", total_compute, total_wait);
     }
 }
 
