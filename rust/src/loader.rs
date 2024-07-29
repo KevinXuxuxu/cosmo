@@ -8,6 +8,7 @@ use crate::engine::Thing;
 use crate::engine::Triangle;
 use crate::movement::Movement;
 use crate::movement::Rotate;
+use crate::util::Ray;
 
 fn parse_vec3(parts: &[String]) -> Vec3 {
     Vec3::new(
@@ -21,8 +22,10 @@ fn parse_movement(parts: &[String]) -> Option<Box<dyn Movement>> {
     match parts[0].as_str() {
         "R" => Some(Box::new(Rotate::new(
             parts[1].parse::<f32>().unwrap(),
-            parse_vec3(&parts[2..5]),
-            parse_vec3(&parts[5..8]),
+            Ray {
+                p: parse_vec3(&parts[2..5]),
+                d: parse_vec3(&parts[5..8]).normalize(),
+            },
         ))),
         _ => None,
     }

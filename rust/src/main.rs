@@ -5,13 +5,15 @@ use std::time::Instant;
 use clap::Parser;
 use glam::f32::Vec3;
 
-use crate::engine::Color;
 use crate::engine::Thing;
 use crate::loader::parse_file;
+use crate::util::Color;
+use crate::util::Ray;
 
 pub mod engine;
 pub mod loader;
 pub mod movement;
+pub mod util;
 
 const CURSOR_UP: &str = "\x1B[F";
 const CLEAR_LINE: &str = "\x1B[K";
@@ -70,7 +72,10 @@ impl Player {
                 let y = -(self.w as f32) / 2. + (j as f32);
                 for obj in &self.objects {
                     // TODO: add covering detect to support multiple objects
-                    match obj.intersect(Vec3::new(0., y, z), Vec3::new(-1., 0., 0.)) {
+                    match obj.intersect(Ray {
+                        p: Vec3::new(0., y, z),
+                        d: Vec3::new(-1., 0., 0.),
+                    }) {
                         Some(c) => {
                             self.a[i][j] = c;
                             break;
@@ -91,12 +96,14 @@ impl Player {
             self.render();
             let compute_t_millis = start.elapsed().as_millis() as u64;
             self.t += self.dt;
-            let wait_t_millis = if self.dt_millis >= compute_t_millis {self.dt_millis - compute_t_millis} else {0};
+            let wait_t_millis = if self.dt_millis >= compute_t_millis {
+                self.dt_millis - compute_t_millis
+            } else {
+                0
+            };
             println!(
                 "{}compute_time: {} wait_time: {}",
-                CLEAR_LINE,
-                compute_t_millis,
-                wait_t_millis
+                CLEAR_LINE, compute_t_millis, wait_t_millis
             );
             total_compute += compute_t_millis;
             total_wait += wait_t_millis;
@@ -105,7 +112,10 @@ impl Player {
             }
             thread::sleep(Duration::from_millis(wait_t_millis));
         }
-        println!("total_compute: {} total_wait: {}", total_compute, total_wait);
+        println!(
+            "total_compute: {} total_wait: {}",
+            total_compute, total_wait
+        );
     }
 }
 

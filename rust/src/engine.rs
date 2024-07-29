@@ -1,15 +1,15 @@
 use glam::f32::Vec3;
 
 use crate::movement::Movement;
-
-pub type Color = char;
+use crate::util::Color;
+use crate::util::Ray;
 
 pub trait Updatable {
     fn update(&mut self, t: f32, dt: f32);
 }
 
 pub trait Visible {
-    fn intersect(&self, p0: Vec3, d: Vec3) -> Option<Color>;
+    fn intersect(&self, ray: Ray) -> Option<Color>;
 }
 
 pub trait Thing: Updatable + Visible {}
@@ -65,13 +65,13 @@ impl Triangle {
 }
 
 impl Visible for Triangle {
-    fn intersect(&self, p0: Vec3, d: Vec3) -> Option<Color> {
-        let denom = self.n.dot(d);
+    fn intersect(&self, ray: Ray) -> Option<Color> {
+        let denom = self.n.dot(ray.d);
         if denom > -1e-6 {
             return None;
         }
-        let t = self.n.dot(self.a - p0) / denom;
-        let p = p0 + t * d;
+        let t = self.n.dot(self.a - ray.p) / denom;
+        let p = ray.p + t * ray.d;
         if self.contains_point(p) {
             Some(self.color)
         } else {
@@ -81,7 +81,7 @@ impl Visible for Triangle {
 }
 
 impl Updatable for Triangle {
-    fn update(&mut self, t: f32, dt: f32) {
+    fn update(&mut self, _t: f32, dt: f32) {
         match &self.m {
             Some(mv) => {
                 mv.update(dt, &mut self.a);
