@@ -5,7 +5,8 @@ use std::io::{BufRead, BufReader};
 use glam::f32::Vec3;
 
 use crate::camera::Camera;
-use crate::camera::ParallelCamera;
+use crate::camera::OrthoCamera;
+use crate::camera::PerspectiveCamera;
 use crate::engine::Thing;
 use crate::engine::Triangle;
 use crate::movement::Movement;
@@ -46,11 +47,18 @@ fn parse_triangle(parts: &[String], points: &HashMap<String, Vec3>) -> Box<Trian
 
 fn parse_camera(parts: &[String], w: usize, h: usize) -> Option<Box<dyn Camera>> {
     match parts[0].as_str() {
+        "O" => {
+            let d = parse_vec3(&parts[1..4]).normalize();
+            let p = parse_vec3(&parts[4..7]);
+            let scale = parts[7].parse::<f32>().unwrap();
+            Some(Box::new(OrthoCamera::new(d, p, scale, w, h)))
+        }
         "P" => {
             let d = parse_vec3(&parts[1..4]).normalize();
             let p = parse_vec3(&parts[4..7]);
             let scale = parts[7].parse::<f32>().unwrap();
-            Some(Box::new(ParallelCamera::new(d, p, scale, w, h)))
+            let f = parts[8].parse::<f32>().unwrap();
+            Some(Box::new(PerspectiveCamera::new(d, p, scale, f, w, h)))
         }
         _ => None,
     }
@@ -77,6 +85,7 @@ pub fn parse_file(filename: &str, w: usize, h: usize) -> (Vec<Box<dyn Thing>>, B
                 }
                 _ => {}
             },
+            "//" => { /* ignore comment */ }
             _ => {
                 panic!("Unknown line type: {}", line);
             }
