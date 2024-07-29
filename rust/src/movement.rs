@@ -8,15 +8,8 @@ pub trait Movement {
 
 #[derive(Default)]
 pub struct Rotate {
-    rad: f32,
-    axis: Ray,
-}
-
-impl Rotate {
-    pub fn new(degree: f32, axis: Ray) -> Self {
-        let rad = degree * (std::f32::consts::PI / 180.);
-        Rotate { rad, axis }
-    }
+    pub rad: f32,
+    pub axis: Ray,
 }
 
 impl Movement for Rotate {

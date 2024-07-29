@@ -1,0 +1,66 @@
+use glam::Vec3;
+
+use crate::movement::Movement;
+use crate::movement::Rotate;
+use crate::util::Ray;
+
+pub trait Camera {
+    fn get_ray(&self, i: usize, j: usize) -> &Ray;
+}
+
+pub struct ParallelCamera {
+    d: Vec3,
+    p: Vec3,
+    scale: f32,
+    w: usize,
+    h: usize,
+    rays: Vec<Vec<Ray>>,
+}
+
+impl ParallelCamera {
+    pub fn new(d: Vec3, p: Vec3, scale: f32, w: usize, h: usize) -> Self {
+        // Compute rotate axis and degree.
+        let d0 = Vec3::new(-1., 0., 0.); // p0 = Vec3(0., 0., 0.)
+        let axis_d = if d == d0 || d == -d0 {
+            // This case d and d0 cannot form a plane, so no valid cross result.
+            Vec3::new(1., 0., 0.)
+        } else {
+            d0.cross(d).normalize()
+        };
+        let rot = Rotate {
+            rad: d0.dot(d).acos(),
+            axis: Ray {
+                p: Vec3::new(0., 0., 0.),
+                d: axis_d,
+            },
+        };
+
+        // Pre-compute all rays
+        let mut rays: Vec<Vec<Ray>> = vec![];
+        for i in 0..h {
+            rays.push(vec![]);
+            let z = ((h as f32) / 2. - (i as f32)) * 2. / scale;
+            for j in 0..w {
+                let y = (-(w as f32) / 2. + (j as f32)) / scale;
+                let mut p0 = Vec3::new(0., y, z);
+                rot.update(1., &mut p0);  // Rotate
+                p0 += p;  // Translate
+                rays[i].push(Ray { p: p0, d: d });
+            }
+        }
+        ParallelCamera {
+            d,
+            p,
+            scale,
+            w,
+            h,
+            rays,
+        }
+    }
+}
+
+impl Camera for ParallelCamera {
+    fn get_ray(&self, i: usize, j: usize) -> &Ray {
+        &self.rays[i][j]
+    }
+}

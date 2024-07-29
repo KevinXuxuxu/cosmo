@@ -3,13 +3,13 @@ use std::time::Duration;
 use std::time::Instant;
 
 use clap::Parser;
-use glam::f32::Vec3;
 
+use crate::camera::Camera;
 use crate::engine::Thing;
 use crate::loader::parse_file;
 use crate::util::Color;
-use crate::util::Ray;
 
+pub mod camera;
 pub mod engine;
 pub mod loader;
 pub mod movement;
@@ -18,7 +18,6 @@ pub mod util;
 const CURSOR_UP: &str = "\x1B[F";
 const CLEAR_LINE: &str = "\x1B[K";
 
-#[derive(Default)]
 struct Player {
     // fr: i32,
     w: usize,
@@ -28,10 +27,11 @@ struct Player {
     dt: f32,
     dt_millis: u64,
     objects: Vec<Box<dyn Thing>>,
+    camera: Box<dyn Camera>,
 }
 
 impl Player {
-    fn new(fr: i32, w: usize, h: usize) -> Self {
+    fn new(fr: i32, w: usize, h: usize, camera: Box<dyn Camera>) -> Self {
         let empty_str = vec![' '; w];
         let a = vec![empty_str; h];
         let dt = 1.0 / (fr as f32);
@@ -40,9 +40,11 @@ impl Player {
             w,
             h,
             a,
+            t: 0.,
             dt,
             dt_millis,
-            ..Default::default()
+            camera,
+            objects: vec![],
         }
     }
 
@@ -65,17 +67,12 @@ impl Player {
         }
 
         // Render
-        for i in 1..self.h {
-            let z = ((self.h as f32) / 2. - (i as f32)) * 2.;
+        for i in 0..self.h {
             for j in 0..self.w {
                 self.a[i][j] = ' ';
-                let y = -(self.w as f32) / 2. + (j as f32);
+                let ray = self.camera.get_ray(i, j);
                 for obj in &self.objects {
-                    // TODO: add covering detect to support multiple objects
-                    match obj.intersect(Ray {
-                        p: Vec3::new(0., y, z),
-                        d: Vec3::new(-1., 0., 0.),
-                    }) {
+                    match obj.intersect(ray) {
                         Some(c) => {
                             self.a[i][j] = c;
                             break;
@@ -146,10 +143,9 @@ fn main() {
     let args = Args::parse();
     let (w, h) = parse_size(&args.size);
 
+    let (objs, camera) = parse_file(&args.filename, w, h);
     // Somehow setting hight to odd number will cause fuzz edge
-    let mut p = Player::new(args.fr, w, h);
-
-    let objs = parse_file(&args.filename);
+    let mut p = Player::new(args.fr, w, h, camera);
     for obj in objs {
         p.add_object(obj);
     }

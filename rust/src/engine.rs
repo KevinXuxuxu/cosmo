@@ -9,7 +9,7 @@ pub trait Updatable {
 }
 
 pub trait Visible {
-    fn intersect(&self, ray: Ray) -> Option<Color>;
+    fn intersect(&self, ray: &Ray) -> Option<Color>;
 }
 
 pub trait Thing: Updatable + Visible {}
@@ -65,7 +65,7 @@ impl Triangle {
 }
 
 impl Visible for Triangle {
-    fn intersect(&self, ray: Ray) -> Option<Color> {
+    fn intersect(&self, ray: &Ray) -> Option<Color> {
         let denom = self.n.dot(ray.d);
         if denom > -1e-6 {
             return None;
