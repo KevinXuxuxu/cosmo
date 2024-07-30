@@ -6,11 +6,13 @@ use clap::Parser;
 
 use crate::camera::Camera;
 use crate::engine::Thing;
+use crate::light::{get_color, Light};
 use crate::loader::parse_file;
 use crate::util::Color;
 
 pub mod camera;
 pub mod engine;
+pub mod light;
 pub mod loader;
 pub mod movement;
 pub mod util;
@@ -28,6 +30,7 @@ struct Player {
     dt_millis: u64,
     objects: Vec<Box<dyn Thing>>,
     camera: Box<dyn Camera>,
+    lights: Vec<Box<dyn Light>>,
 }
 
 impl Player {
@@ -45,11 +48,16 @@ impl Player {
             dt_millis,
             camera,
             objects: vec![],
+            lights: vec![],
         }
     }
 
     pub fn add_object(&mut self, obj: Box<dyn Thing>) {
         self.objects.push(obj);
+    }
+
+    pub fn add_light(&mut self, light: Box<dyn Light>) {
+        self.lights.push(light);
     }
 
     pub fn render(&self) {
@@ -73,8 +81,12 @@ impl Player {
                 let ray = self.camera.get_ray(i, j);
                 for obj in &self.objects {
                     match obj.intersect(ray) {
-                        Some(c) => {
-                            self.a[i][j] = c;
+                        Some((p, n, c)) => {
+                            self.a[i][j] = if self.lights.len() > 0 {
+                                get_color(&self.lights, p, n, ray.d)
+                            } else {
+                                c
+                            };
                             break;
                         }
                         None => {}
@@ -143,11 +155,14 @@ fn main() {
     let args = Args::parse();
     let (w, h) = parse_size(&args.size);
 
-    let (objs, camera) = parse_file(&args.filename, w, h);
+    let (objs, camera, lights) = parse_file(&args.filename, w, h);
     // Somehow setting hight to odd number will cause fuzz edge
     let mut p = Player::new(args.fr, w, h, camera);
     for obj in objs {
         p.add_object(obj);
+    }
+    for light in lights {
+        p.add_light(light);
     }
 
     p.run(args.duration);
