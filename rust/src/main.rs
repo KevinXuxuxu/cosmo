@@ -71,7 +71,7 @@ impl Player {
     pub fn update(&mut self) {
         // Update objects
         for obj in &mut self.objects {
-            obj.update(self.t, self.dt);
+            obj.update(self.t, self.dt, None);
         }
 
         // Render
@@ -121,9 +121,10 @@ impl Player {
             }
             thread::sleep(Duration::from_millis(wait_t_millis));
         }
+        let load = (total_compute as f32) * 100. / ((total_compute + total_wait) as f32);
         println!(
-            "total_compute: {} total_wait: {}",
-            total_compute, total_wait
+            "total_compute: {} total_wait: {} load: {}%",
+            total_compute, total_wait, load
         );
     }
 }

@@ -4,18 +4,11 @@ use std::io::{BufRead, BufReader};
 
 use glam::f32::Vec3;
 
-use crate::camera::Camera;
-use crate::camera::OrthoCamera;
-use crate::camera::PerspectiveCamera;
-use crate::engine::Thing;
-use crate::engine::Triangle;
-use crate::light::DirectionalLight;
-use crate::light::Light;
-use crate::light::PointLight;
-use crate::movement::Movement;
-use crate::movement::Rotate;
-use crate::util::to_rad;
-use crate::util::Ray;
+use crate::camera::{Camera, OrthoCamera, PerspectiveCamera};
+use crate::engine::{Thing, Triangle, Object};
+use crate::light::{Light, DirectionalLight, PointLight};
+use crate::movement::{Movement, Rotate};
+use crate::util::{to_rad, Ray};
 
 fn parse_f32(part: &String) -> f32 {
     part.parse::<f32>().unwrap()
@@ -48,7 +41,6 @@ fn parse_triangle(parts: &[String], points: &HashMap<String, Vec3>) -> Box<Trian
         points.get(&parts[1]).unwrap().clone(),
         points.get(&parts[2]).unwrap().clone(),
         parts[3].chars().nth(0).unwrap(),
-        parse_movement(&parts[4..]),
     ))
 }
 
@@ -92,10 +84,12 @@ pub fn parse_file(
 ) -> (Vec<Box<dyn Thing>>, Box<dyn Camera>, Vec<Box<dyn Light>>) {
     let mut points: HashMap<String, Vec3> = HashMap::new();
     let mut things: Vec<Box<dyn Thing>> = vec![];
+    let mut children: Vec<Box<dyn Thing>> = vec![];
     let file = File::open(&filename).unwrap();
     let reader = BufReader::new(file);
     let mut camera: Option<Box<dyn Camera>> = None;
     let mut lights: Vec<Box<dyn Light>> = vec![];
+    let mut m: Option<Box<dyn Movement>> = None;
 
     for line in reader.lines() {
         let line = line.expect("fail to read line");
@@ -104,7 +98,19 @@ pub fn parse_file(
             "P" => {
                 points.insert(parts[1].clone(), parse_vec3(&parts[2..5]));
             }
-            "T" => things.push(parse_triangle(&parts[1..], &points)),
+            "OBJ" => { /* start parsing object, nothing to do */}
+            "END_OBJ" => {
+                things.push(Box::new(Object { children: children, m: m }));
+                children = vec![];
+                m = None;
+            }
+            "M" => match m {
+                None => {
+                    m = parse_movement(&parts[1..]);
+                }
+                _ => {}
+            }
+            "T" => children.push(parse_triangle(&parts[1..], &points)),
             "C" => match camera {
                 None => {
                     camera = parse_camera(&parts[1..], w, h);

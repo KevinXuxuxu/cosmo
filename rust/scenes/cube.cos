@@ -12,15 +12,18 @@ P E -4.082483 -7.071067 2.886751
 P F 4.082483 7.071067 -2.886751
 P G -8.164965 0 -2.886751
 P H 4.082483 -7.071067 -2.886751
-T A C D - R 90 0 0 0 0 0 1
-T C F D - R 90 0 0 0 0 0 1
-T A D E * R 90 0 0 0 0 0 1
-T D G E * R 90 0 0 0 0 0 1
-T A E C . R 90 0 0 0 0 0 1
-T E H C . R 90 0 0 0 0 0 1
-T D F G # R 90 0 0 0 0 0 1
-T F B G # R 90 0 0 0 0 0 1
-T C H F / R 90 0 0 0 0 0 1
-T H B F / R 90 0 0 0 0 0 1
-T E G H @ R 90 0 0 0 0 0 1
-T G B H @ R 90 0 0 0 0 0 1
+OBJ
+T A C D - 
+T C F D -
+T A D E *
+T D G E *
+T A E C .
+T E H C .
+T D F G #
+T F B G #
+T C H F /
+T H B F /
+T E G H @
+T G B H @
+M R 90 0 0 0 0 0 1
+END_OBJ

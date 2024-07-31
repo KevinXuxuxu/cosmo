@@ -5,7 +5,7 @@ use crate::util::Color;
 use crate::util::Ray;
 
 pub trait Updatable {
-    fn update(&mut self, t: f32, dt: f32);
+    fn update(&mut self, t: f32, dt: f32, m: Option<&Box<dyn Movement>>);
 }
 
 pub trait Visible {
@@ -27,17 +27,15 @@ pub struct Triangle {
     dot11: f32,
     inv_denom: f32,
     n: Vec3,
-    m: Option<Box<dyn Movement>>,
 }
 
 impl Triangle {
-    pub fn new(a: Vec3, b: Vec3, c: Vec3, color: Color, m: Option<Box<dyn Movement>>) -> Self {
+    pub fn new(a: Vec3, b: Vec3, c: Vec3, color: Color) -> Self {
         let mut t = Triangle {
             a,
             b,
             c,
             color,
-            m,
             ..Default::default()
         };
         t.process();
@@ -81,8 +79,8 @@ impl Visible for Triangle {
 }
 
 impl Updatable for Triangle {
-    fn update(&mut self, _t: f32, dt: f32) {
-        match &self.m {
+    fn update(&mut self, _t: f32, dt: f32, m: Option<&Box<dyn Movement>>) {
+        match m {
             Some(mv) => {
                 mv.update(dt, &mut self.a);
                 mv.update(dt, &mut self.b);
@@ -95,3 +93,35 @@ impl Updatable for Triangle {
 }
 
 impl Thing for Triangle {}
+
+pub struct Object {
+    pub children: Vec<Box<dyn Thing>>,
+    pub m: Option<Box<dyn Movement>>,
+}
+
+impl Visible for Object {
+    fn intersect(&self, ray: &Ray) -> Option<(Vec3, Vec3, Color)> {
+        for child in &self.children {
+            match child.intersect(ray) {
+                Some(rtn) => return Some(rtn),
+                _ => {}
+            }
+        }
+        return None
+    }
+}
+
+impl Updatable for Object {
+    fn update(&mut self, t: f32, dt: f32, _m: Option<&Box<dyn Movement>>) {
+        match &self.m {
+            Some(mv) => {
+                for child in &mut self.children {
+                    child.update(t, dt, Some(&mv));
+                }
+            }
+            None => {}
+        }
+    }
+}
+
+impl Thing for Object {}
