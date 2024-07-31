@@ -5,13 +5,17 @@ use std::io::{BufRead, BufReader};
 use glam::f32::Vec3;
 
 use crate::camera::{Camera, OrthoCamera, PerspectiveCamera};
-use crate::engine::{Thing, Triangle, Object};
-use crate::light::{Light, DirectionalLight, PointLight};
+use crate::engine::{Object, Sphere, Thing, Triangle};
+use crate::light::{DirectionalLight, Light, PointLight};
 use crate::movement::{Movement, Rotate};
 use crate::util::{to_rad, Ray};
 
 fn parse_f32(part: &String) -> f32 {
     part.parse::<f32>().unwrap()
+}
+
+fn parse_char(part: &String) -> char {
+    part.chars().nth(0).unwrap()
 }
 
 fn parse_vec3(parts: &[String]) -> Vec3 {
@@ -40,8 +44,16 @@ fn parse_triangle(parts: &[String], points: &HashMap<String, Vec3>) -> Box<Trian
         points.get(&parts[0]).unwrap().clone(),
         points.get(&parts[1]).unwrap().clone(),
         points.get(&parts[2]).unwrap().clone(),
-        parts[3].chars().nth(0).unwrap(),
+        parse_char(&parts[3]),
     ))
+}
+
+fn parse_sphere(parts: &[String], points: &HashMap<String, Vec3>) -> Box<Sphere> {
+    Box::new(Sphere {
+        o: points.get(&parts[0]).unwrap().clone(),
+        r: parse_f32(&parts[1]),
+        color: parse_char(&parts[2]),
+    })
 }
 
 fn parse_camera(parts: &[String], w: usize, h: usize) -> Option<Box<dyn Camera>> {
@@ -98,9 +110,12 @@ pub fn parse_file(
             "P" => {
                 points.insert(parts[1].clone(), parse_vec3(&parts[2..5]));
             }
-            "OBJ" => { /* start parsing object, nothing to do */}
+            "OBJ" => { /* start parsing object, nothing to do */ }
             "END_OBJ" => {
-                things.push(Box::new(Object { children: children, m: m }));
+                things.push(Box::new(Object {
+                    children: children,
+                    m: m,
+                }));
                 children = vec![];
                 m = None;
             }
@@ -109,8 +124,9 @@ pub fn parse_file(
                     m = parse_movement(&parts[1..]);
                 }
                 _ => {}
-            }
+            },
             "T" => children.push(parse_triangle(&parts[1..], &points)),
+            "S" => children.push(parse_sphere(&parts[1..], &points)),
             "C" => match camera {
                 None => {
                     camera = parse_camera(&parts[1..], w, h);

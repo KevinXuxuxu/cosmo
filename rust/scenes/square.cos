@@ -3,5 +3,8 @@ P A 0 -30 30
 P B 0 30 30
 P C 0 30 -30
 P D 0 -30 -30
-T A C B @ R 90 0 0 0 1 1 1
-T A D C . R 90 0 0 0 1 1 1
+OBJ
+T A C B @
+T A D C .
+M R 90 0 0 0 1 1 1
+END_OBJ

@@ -94,6 +94,51 @@ impl Updatable for Triangle {
 
 impl Thing for Triangle {}
 
+pub struct Sphere {
+    pub o: Vec3,
+    pub r: f32,
+    pub color: Color,
+}
+
+impl Visible for Sphere {
+    fn intersect(&self, ray: &Ray) -> Option<(Vec3, Vec3, Color)> {
+        let oc = ray.p - self.o;
+        let a = ray.d.dot(ray.d);
+        let b = 2.0 * oc.dot(ray.d);
+        let c = oc.dot(oc) - self.r * self.r;
+        let discriminant = b * b - 4.0 * a * c;
+
+        if discriminant < 0.0 {
+            None
+        } else {
+            let t1 = (-b - discriminant.sqrt()) / (2.0 * a);
+            let t2 = (-b + discriminant.sqrt()) / (2.0 * a);
+
+            let t = if t1 >= 0.0 { t1 } else { t2 };
+
+            if t >= 0.0 {
+                let q = ray.p + t * ray.d;
+                Some((q, (q - self.o).normalize(), self.color))
+            } else {
+                None
+            }
+        }
+    }
+}
+
+impl Updatable for Sphere {
+    fn update(&mut self, _t: f32, dt: f32, m: Option<&Box<dyn Movement>>) {
+        match m {
+            Some(mv) => {
+                mv.update(dt, &mut self.o);
+            }
+            None => {}
+        };
+    }
+}
+
+impl Thing for Sphere {}
+
 pub struct Object {
     pub children: Vec<Box<dyn Thing>>,
     pub m: Option<Box<dyn Movement>>,
@@ -107,7 +152,7 @@ impl Visible for Object {
                 _ => {}
             }
         }
-        return None
+        return None;
     }
 }
 
