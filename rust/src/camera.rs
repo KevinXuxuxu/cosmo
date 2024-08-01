@@ -9,11 +9,11 @@ pub trait Camera {
 }
 
 pub struct OrthoCamera {
-    d: Vec3,
-    p: Vec3,
-    scale: f32,
-    w: usize,
-    h: usize,
+    // d: Vec3,
+    // p: Vec3,
+    // scale: f32,
+    // w: usize,
+    // h: usize,
     rays: Vec<Vec<Ray>>,
 }
 
@@ -49,11 +49,11 @@ impl OrthoCamera {
             }
         }
         OrthoCamera {
-            d,
-            p,
-            scale,
-            w,
-            h,
+            // d,
+            // p,
+            // scale,
+            // w,
+            // h,
             rays,
         }
     }
@@ -66,12 +66,12 @@ impl Camera for OrthoCamera {
 }
 
 pub struct PerspectiveCamera {
-    d: Vec3,
-    p: Vec3,
-    scale: f32,
-    w: usize,
-    h: usize,
-    f: f32,
+    // d: Vec3,
+    // p: Vec3,
+    // scale: f32,
+    // w: usize,
+    // h: usize,
+    // f: f32,
     rays: Vec<Vec<Ray>>,
 }
 
@@ -105,12 +105,12 @@ impl PerspectiveCamera {
             }
         }
         PerspectiveCamera {
-            d,
-            p,
-            scale,
-            w,
-            h,
-            f,
+            // d,
+            // p,
+            // scale,
+            // w,
+            // h,
+            // f,
             rays,
         }
     }

@@ -5,7 +5,7 @@ use std::io::{BufRead, BufReader};
 use glam::f32::Vec3;
 
 use crate::camera::{Camera, OrthoCamera, PerspectiveCamera};
-use crate::engine::{Object, Sphere, Thing, Triangle};
+use crate::engine::{Object, Sphere, Torus, Thing, Triangle};
 use crate::light::{DirectionalLight, Light, PointLight};
 use crate::movement::{Movement, Rotate};
 use crate::util::{to_rad, Ray};
@@ -56,6 +56,15 @@ fn parse_sphere(parts: &[String], points: &HashMap<String, Vec3>) -> Box<Sphere>
     })
 }
 
+fn parse_torus(parts: &[String], _points: &HashMap<String, Vec3>, debug: bool) -> Box<Torus> {
+    Box::new(Torus::new(
+        parse_f32(&parts[0]),
+        parse_f32(&parts[1]),
+        parse_char(&parts[2]),
+        debug,
+    ))
+}
+
 fn parse_camera(parts: &[String], w: usize, h: usize) -> Option<Box<dyn Camera>> {
     match parts[0].as_str() {
         "O" => {
@@ -93,7 +102,7 @@ pub fn parse_file(
     filename: &str,
     w: usize,
     h: usize,
-    _debug: bool,
+    debug: bool,
 ) -> (Vec<Box<dyn Thing>>, Box<dyn Camera>, Vec<Box<dyn Light>>) {
     let mut points: HashMap<String, Vec3> = HashMap::new();
     let mut things: Vec<Box<dyn Thing>> = vec![];
@@ -128,6 +137,7 @@ pub fn parse_file(
             },
             "T" => children.push(parse_triangle(&parts[1..], &points)),
             "S" => children.push(parse_sphere(&parts[1..], &points)),
+            "TRS" => children.push(parse_torus(&parts[1..], &points, debug)),
             "C" => match camera {
                 None => {
                     camera = parse_camera(&parts[1..], w, h);

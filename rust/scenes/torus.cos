@@ -1,0 +1,11 @@
+// cargo run -- -f scenes/torus.cos -s 80,40 -d 10 --fr 60
+//
+// L D -1 -1 -1 1
+L P 0 0 30 800
+// C O -1 0 0 0 0 0 3
+C P -1 0 -1 50 0 50 50 2
+P A 0 0 0
+OBJ
+TRS 15 5 .
+// S A 20 .
+END_OBJ

@@ -4,6 +4,8 @@ use crate::movement::Movement;
 use crate::util::Color;
 use crate::util::Ray;
 
+const NEWTON_MAX_ITER: usize = 20;
+
 pub trait Updatable {
     fn update(&mut self, t: f32, dt: f32, m: Option<&Box<dyn Movement>>);
 }
@@ -138,6 +140,80 @@ impl Updatable for Sphere {
 }
 
 impl Thing for Sphere {}
+
+#[derive(Default)]
+pub struct Torus {
+    R: f32,
+    r: f32,
+    color: Color,
+    debug: bool,
+    R_2: f32,
+    r_sq_sum: f32,
+    r_sq_diff_sq: f32,
+}
+
+impl Torus {
+    pub fn new(R: f32, r: f32, color: Color, debug: bool) -> Self {
+        let mut t = Torus {
+            R,
+            r,
+            color,
+            debug,
+            ..Default::default()
+        };
+        t.process();
+        t
+    }
+
+    fn process(&mut self) {
+        self.R_2 = self.R*self.R;
+        let r_2 = self.r*self.r;
+        self.r_sq_sum = self.R_2 + r_2;
+        let r_sq_diff = self.R_2 - r_2;
+        self.r_sq_diff_sq = r_sq_diff*r_sq_diff;
+    }
+
+    fn dt(&self, ray: &Ray, t: f32) -> (f32, f32) {
+        let pt = ray.p + t * ray.d;
+        let u = (pt.x.powi(2) + pt.y.powi(2)).sqrt();
+        let f = (u - self.R).powi(2) + pt.z.powi(2) - self.r.powi(2);
+        let du_dt = pt.x * ray.d.x / u + pt.y * ray.d.y / u;
+        let df_dt = 2. * (u - self.R) * du_dt + 2. * pt.z * ray.d.z;
+        (f, df_dt)
+    }
+}
+
+impl Visible for Torus {
+    fn intersect(&self, ray: &Ray) -> Option<(Vec3, Vec3, Color)> {
+        // Use Newton's method to numerically solve intersection.
+        let mut t: f32 = 0.01;
+        let mut n: usize = 0;
+        loop {
+            let (f, df_dt) = self.dt(ray, t);
+            if df_dt.abs() <= f32::EPSILON {
+                break;
+            }
+            let dt = f / df_dt;
+            if dt.abs() < 1e-4 {
+                break;
+            }
+            if n >= NEWTON_MAX_ITER {
+                return None;
+            }
+            t -= dt;
+            n += 1;
+        }
+        let p = ray.p + t * ray.d;
+        let o = self.R * p.with_z(0.).normalize();
+        Some((p, (p - o).normalize(), self.color))
+    }
+}
+
+impl Updatable for Torus {
+    fn update(&mut self, _t: f32, _dt: f32, _m: Option<&Box<dyn Movement>>) {}
+}
+
+impl Thing for Torus {}
 
 pub struct Object {
     pub children: Vec<Box<dyn Thing>>,
