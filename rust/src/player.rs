@@ -21,13 +21,14 @@ pub struct Player {
     objects: Vec<Box<dyn Thing>>,
     camera: Box<dyn Camera>,
     lights: Vec<Box<dyn Light>>,
+    debug: bool,
 }
 
 impl Player {
-    pub fn new(fr: i32, w: usize, h: usize, camera: Box<dyn Camera>) -> Self {
+    pub fn new(fr: i32, w: usize, h: usize, camera: Box<dyn Camera>, debug: bool) -> Self {
         let empty_str = vec![' '; w];
         let a = vec![empty_str; h];
-        let dt = 1.0 / (fr as f32);
+        let dt = if debug { 1.0 } else { 1.0 / (fr as f32) };
         let dt_millis = (dt * 1000.0) as u64;
         Player {
             w,
@@ -39,6 +40,7 @@ impl Player {
             camera,
             objects: vec![],
             lights: vec![],
+            debug: debug,
         }
     }
 
@@ -92,7 +94,9 @@ impl Player {
         loop {
             let start = Instant::now();
             self.update();
-            self.render();
+            if !self.debug {
+                self.render();
+            }
             let compute_t_millis = start.elapsed().as_millis() as u64;
             self.t += self.dt;
             let wait_t_millis = if self.dt_millis >= compute_t_millis {
@@ -100,10 +104,12 @@ impl Player {
             } else {
                 0
             };
-            println!(
-                "{}compute_time: {} wait_time: {}",
-                CLEAR_LINE, compute_t_millis, wait_t_millis
-            );
+            if !self.debug {
+                println!(
+                    "{}compute_time: {} wait_time: {}",
+                    CLEAR_LINE, compute_t_millis, wait_t_millis
+                );
+            }
             total_compute += compute_t_millis;
             total_wait += wait_t_millis;
             if self.t > duration {
@@ -112,9 +118,11 @@ impl Player {
             thread::sleep(Duration::from_millis(wait_t_millis));
         }
         let load = (total_compute as f32) * 100. / ((total_compute + total_wait) as f32);
-        println!(
-            "total_compute: {} total_wait: {} load: {}%",
-            total_compute, total_wait, load
-        );
+        if !self.debug {
+            println!(
+                "total_compute: {} total_wait: {} load: {}%",
+                total_compute, total_wait, load
+            );
+        }
     }
 }

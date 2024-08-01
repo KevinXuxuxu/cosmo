@@ -93,6 +93,7 @@ pub fn parse_file(
     filename: &str,
     w: usize,
     h: usize,
+    _debug: bool,
 ) -> (Vec<Box<dyn Thing>>, Box<dyn Camera>, Vec<Box<dyn Light>>) {
     let mut points: HashMap<String, Vec3> = HashMap::new();
     let mut things: Vec<Box<dyn Thing>> = vec![];
