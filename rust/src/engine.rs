@@ -1,6 +1,6 @@
 use glam::f32::Vec3;
 
-use crate::movement::Movement;
+use crate::movement::{Movement, Rotate};
 use crate::util::Color;
 use crate::util::Ray;
 
@@ -143,34 +143,24 @@ impl Thing for Sphere {}
 
 #[derive(Default)]
 pub struct Torus {
+    d: Vec3,
+    p: Vec3,
     R: f32,
     r: f32,
     color: Color,
     debug: bool,
-    R_2: f32,
-    r_sq_sum: f32,
-    r_sq_diff_sq: f32,
+    rot: Rotate
 }
 
 impl Torus {
-    pub fn new(R: f32, r: f32, color: Color, debug: bool) -> Self {
-        let mut t = Torus {
-            R,
-            r,
-            color,
-            debug,
-            ..Default::default()
-        };
+    pub fn new(d: Vec3, p: Vec3, R: f32, r: f32, color: Color, debug: bool) -> Self {
+        let mut t = Torus {d, p, R, r, color, debug, rot: Rotate{rad: 0., axis: Ray{p: Vec3::ZERO, d: Vec3::ZERO}}};
         t.process();
         t
     }
 
     fn process(&mut self) {
-        self.R_2 = self.R*self.R;
-        let r_2 = self.r*self.r;
-        self.r_sq_sum = self.R_2 + r_2;
-        let r_sq_diff = self.R_2 - r_2;
-        self.r_sq_diff_sq = r_sq_diff*r_sq_diff;
+        self.rot = Rotate::get(self.d, Vec3::new(0., 0., 1.), Vec3::ZERO);
     }
 
     fn dt(&self, ray: &Ray, t: f32) -> (f32, f32) {
@@ -185,11 +175,16 @@ impl Torus {
 
 impl Visible for Torus {
     fn intersect(&self, ray: &Ray) -> Option<(Vec3, Vec3, Color)> {
+        let mut r_p = ray.p - self.p;
+        let mut r_d = ray.d;
+        self.rot.update(1., &mut r_p);
+        self.rot.update(1., &mut r_d);
+        let new_ray = Ray{p: r_p, d: r_d};
         // Use Newton's method to numerically solve intersection.
         let mut t: f32 = 0.01;
         let mut n: usize = 0;
         loop {
-            let (f, df_dt) = self.dt(ray, t);
+            let (f, df_dt) = self.dt(&new_ray, t);
             if df_dt.abs() <= f32::EPSILON {
                 break;
             }
@@ -203,14 +198,23 @@ impl Visible for Torus {
             t -= dt;
             n += 1;
         }
-        let p = ray.p + t * ray.d;
+        let p = new_ray.p + t * new_ray.d;
         let o = self.R * p.with_z(0.).normalize();
         Some((p, (p - o).normalize(), self.color))
     }
 }
 
 impl Updatable for Torus {
-    fn update(&mut self, _t: f32, _dt: f32, _m: Option<&Box<dyn Movement>>) {}
+    fn update(&mut self, _t: f32, dt: f32, m: Option<&Box<dyn Movement>>) {
+        match m {
+            Some(mv) => {
+                mv.update(dt, &mut self.d);
+                mv.update(dt, &mut self.p);
+                self.process();
+            }
+            None => {}
+        };
+    }
 }
 
 impl Thing for Torus {}

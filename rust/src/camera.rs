@@ -20,20 +20,7 @@ pub struct OrthoCamera {
 impl OrthoCamera {
     pub fn new(d: Vec3, p: Vec3, scale: f32, w: usize, h: usize) -> Self {
         // Compute rotate axis and degree.
-        let d0 = Vec3::new(-1., 0., 0.); // p0 = Vec3(0., 0., 0.)
-        let axis_d = if d == d0 || d == -d0 {
-            // This case d and d0 cannot form a plane, so no valid cross result.
-            Vec3::new(0., 0., 1.)
-        } else {
-            d0.cross(d).normalize()
-        };
-        let rot = Rotate {
-            rad: d0.dot(d).acos(),
-            axis: Ray {
-                p: Vec3::ZERO,
-                d: axis_d,
-            },
-        };
+        let rot = Rotate::get(Vec3::new(-1., 0., 0.), d, Vec3::ZERO);
 
         // Pre-compute all rays
         let mut rays: Vec<Vec<Ray>> = vec![];
@@ -77,18 +64,8 @@ pub struct PerspectiveCamera {
 
 impl PerspectiveCamera {
     pub fn new(d: Vec3, p: Vec3, scale: f32, f: f32, w: usize, h: usize) -> Self {
-        let d0 = Vec3::new(-1., 0., 0.);
         let o = Vec3::new(f, 0., 0.);
-        let axis_d = if d == d0 || d == -d0 {
-            // This case d and d0 cannot form a plane, so no valid cross result.
-            Vec3::new(0., 0., 1.)
-        } else {
-            d0.cross(d).normalize()
-        };
-        let rot = Rotate {
-            rad: d0.dot(d).acos(),
-            axis: Ray { p: o, d: axis_d },
-        };
+        let rot = Rotate::get(Vec3::new(-1., 0., 0.), d, o);
         let mut rays: Vec<Vec<Ray>> = vec![];
         for i in 0..h {
             rays.push(vec![]);

@@ -58,9 +58,11 @@ fn parse_sphere(parts: &[String], points: &HashMap<String, Vec3>) -> Box<Sphere>
 
 fn parse_torus(parts: &[String], _points: &HashMap<String, Vec3>, debug: bool) -> Box<Torus> {
     Box::new(Torus::new(
-        parse_f32(&parts[0]),
-        parse_f32(&parts[1]),
-        parse_char(&parts[2]),
+        parse_vec3(&parts[0..3]).normalize(),
+        parse_vec3(&parts[3..6]),
+        parse_f32(&parts[6]),
+        parse_f32(&parts[7]),
+        parse_char(&parts[8]),
         debug,
     ))
 }
