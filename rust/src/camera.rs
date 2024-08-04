@@ -30,7 +30,7 @@ impl OrthoCamera {
             for j in 0..w {
                 let y = (-(w as f32) / 2. + (j as f32)) / scale;
                 let mut p0 = Vec3::new(0., y, z);
-                rot.update(1., &mut p0); // Rotate
+                rot.update_point(1., &mut p0); // Rotate
                 p0 += p; // Translate
                 rays[i].push(Ray { p: p0, d: d });
             }
@@ -73,7 +73,7 @@ impl PerspectiveCamera {
             for j in 0..w {
                 let y = (-(w as f32) / 2. + (j as f32)) / scale;
                 let mut p0 = Vec3::new(0., y, z);
-                rot.update(1., &mut p0); // Rotate
+                rot.update_point(1., &mut p0); // Rotate
                 p0 += p - o; // Translate
                 rays[i].push(Ray {
                     p: p,

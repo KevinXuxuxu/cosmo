@@ -5,7 +5,7 @@ use std::io::{BufRead, BufReader};
 use glam::f32::Vec3;
 
 use crate::camera::{Camera, OrthoCamera, PerspectiveCamera};
-use crate::engine::{Object, Sphere, Torus, Thing, Triangle};
+use crate::engine::{Object, Sphere, Thing, Torus, Triangle};
 use crate::light::{DirectionalLight, Light, PointLight};
 use crate::movement::{Movement, Rotate};
 use crate::util::{to_rad, Ray};

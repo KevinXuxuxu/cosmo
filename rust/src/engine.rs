@@ -84,9 +84,9 @@ impl Updatable for Triangle {
     fn update(&mut self, _t: f32, dt: f32, m: Option<&Box<dyn Movement>>) {
         match m {
             Some(mv) => {
-                mv.update(dt, &mut self.a);
-                mv.update(dt, &mut self.b);
-                mv.update(dt, &mut self.c);
+                mv.update_point(dt, &mut self.a);
+                mv.update_point(dt, &mut self.b);
+                mv.update_point(dt, &mut self.c);
                 self.process();
             }
             None => {}
@@ -132,7 +132,7 @@ impl Updatable for Sphere {
     fn update(&mut self, _t: f32, dt: f32, m: Option<&Box<dyn Movement>>) {
         match m {
             Some(mv) => {
-                mv.update(dt, &mut self.o);
+                mv.update_point(dt, &mut self.o);
             }
             None => {}
         };
@@ -149,12 +149,26 @@ pub struct Torus {
     r: f32,
     color: Color,
     debug: bool,
-    rot: Rotate
+    rot: Rotate,
 }
 
 impl Torus {
     pub fn new(d: Vec3, p: Vec3, R: f32, r: f32, color: Color, debug: bool) -> Self {
-        let mut t = Torus {d, p, R, r, color, debug, rot: Rotate{rad: 0., axis: Ray{p: Vec3::ZERO, d: Vec3::ZERO}}};
+        let mut t = Torus {
+            d,
+            p,
+            R,
+            r,
+            color,
+            debug,
+            rot: Rotate {
+                rad: 0.,
+                axis: Ray {
+                    p: Vec3::ZERO,
+                    d: Vec3::ZERO,
+                },
+            },
+        };
         t.process();
         t
     }
@@ -175,11 +189,12 @@ impl Torus {
 
 impl Visible for Torus {
     fn intersect(&self, ray: &Ray) -> Option<(Vec3, Vec3, Color)> {
+        // Transpose ray as if the torus is at standard position.
         let mut r_p = ray.p - self.p;
         let mut r_d = ray.d;
-        self.rot.update(1., &mut r_p);
-        self.rot.update(1., &mut r_d);
-        let new_ray = Ray{p: r_p, d: r_d};
+        self.rot.update_point(1., &mut r_p);
+        self.rot.update_point(1., &mut r_d);
+        let new_ray = Ray { p: r_p, d: r_d };
         // Use Newton's method to numerically solve intersection.
         let mut t: f32 = 0.01;
         let mut n: usize = 0;
@@ -198,8 +213,13 @@ impl Visible for Torus {
             t -= dt;
             n += 1;
         }
-        let p = new_ray.p + t * new_ray.d;
-        let o = self.R * p.with_z(0.).normalize();
+        let mut p = new_ray.p + t * new_ray.d;
+        let mut o = self.R * p.with_z(0.).normalize();
+        // Transpose intersection and normal vec back to correct position.
+        self.rot.update_point(-1., &mut p);
+        self.rot.update_point(-1., &mut o);
+        p += self.p;
+        o += self.p;
         Some((p, (p - o).normalize(), self.color))
     }
 }
@@ -208,8 +228,8 @@ impl Updatable for Torus {
     fn update(&mut self, _t: f32, dt: f32, m: Option<&Box<dyn Movement>>) {
         match m {
             Some(mv) => {
-                mv.update(dt, &mut self.d);
-                mv.update(dt, &mut self.p);
+                mv.update_direction(dt, &mut self.d);
+                mv.update_point(dt, &mut self.p);
                 self.process();
             }
             None => {}
