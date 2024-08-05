@@ -10,6 +10,7 @@ pub mod loader;
 pub mod movement;
 pub mod player;
 pub mod util;
+pub mod aabb;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -27,6 +28,9 @@ struct Args {
     duration: f32,
 
     #[arg(long, default_value_t = false)]
+    aabb: bool,
+
+    #[arg(long, default_value_t = false)]
     debug: bool,
 }
 
@@ -41,7 +45,7 @@ fn main() {
     let args = Args::parse();
     let (w, h) = parse_size(&args.size);
 
-    let (objs, camera, lights) = parse_file(&args.filename, w, h, args.debug);
+    let (objs, camera, lights) = parse_file(&args.filename, w, h, args.debug, args.aabb);
     // Somehow setting hight to odd number will cause fuzz edge
     let mut p = Player::new(args.fr, w, h, camera, args.debug);
     for obj in objs {

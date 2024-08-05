@@ -9,6 +9,7 @@ use crate::engine::{Object, Sphere, Thing, Torus, Triangle};
 use crate::light::{DirectionalLight, Light, PointLight};
 use crate::movement::{Movement, Rotate};
 use crate::util::{to_rad, Ray};
+use crate::aabb::AABB;
 
 fn parse_f32(part: &String) -> f32 {
     part.parse::<f32>().unwrap()
@@ -105,6 +106,7 @@ pub fn parse_file(
     w: usize,
     h: usize,
     debug: bool,
+    enable_aabb: bool
 ) -> (Vec<Box<dyn Thing>>, Box<dyn Camera>, Vec<Box<dyn Light>>) {
     let mut points: HashMap<String, Vec3> = HashMap::new();
     let mut things: Vec<Box<dyn Thing>> = vec![];
@@ -124,10 +126,7 @@ pub fn parse_file(
             }
             "OBJ" => { /* start parsing object, nothing to do */ }
             "END_OBJ" => {
-                things.push(Box::new(Object {
-                    children: children,
-                    m: m,
-                }));
+                things.push(Box::new(Object::new(children, m, enable_aabb, debug)));
                 children = vec![];
                 m = None;
             }

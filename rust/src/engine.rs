@@ -1,5 +1,6 @@
 use glam::f32::Vec3;
 
+use crate::aabb::AABB;
 use crate::movement::{Movement, Rotate};
 use crate::util::Color;
 use crate::util::Ray;
@@ -12,6 +13,7 @@ pub trait Updatable {
 
 pub trait Visible {
     fn intersect(&self, ray: &Ray) -> Option<(Vec3, Vec3, Color)>;
+    fn update_aabb(&self, aabb: &mut AABB);
 }
 
 pub trait Thing: Updatable + Visible {}
@@ -78,6 +80,12 @@ impl Visible for Triangle {
             None
         }
     }
+
+    fn update_aabb(&self, aabb: &mut AABB) {
+        aabb.update(&self.a);
+        aabb.update(&self.b);
+        aabb.update(&self.c);
+    }
 }
 
 impl Updatable for Triangle {
@@ -126,6 +134,8 @@ impl Visible for Sphere {
             }
         }
     }
+
+    fn update_aabb(&self, aabb: &mut AABB) {}
 }
 
 impl Updatable for Sphere {
@@ -222,6 +232,8 @@ impl Visible for Torus {
         o += self.p;
         Some((p, (p - o).normalize(), self.color))
     }
+
+    fn update_aabb(&self, aabb: &mut AABB) {}
 }
 
 impl Updatable for Torus {
@@ -240,12 +252,34 @@ impl Updatable for Torus {
 impl Thing for Torus {}
 
 pub struct Object {
-    pub children: Vec<Box<dyn Thing>>,
-    pub m: Option<Box<dyn Movement>>,
+    children: Vec<Box<dyn Thing>>,
+    m: Option<Box<dyn Movement>>,
+    aabb: AABB,
+    enable_aabb: bool,
+    debug: bool,
+}
+
+impl Object {
+    pub fn new(children: Vec<Box<dyn Thing>>, m: Option<Box<dyn Movement>>, enable_aabb: bool, debug: bool) -> Self {
+        let mut o = Object {children, m, aabb: AABB::new(), enable_aabb, debug};
+        if enable_aabb { o.process(); }
+        o
+    }
+
+    fn process(&mut self) {
+        self.aabb.clear();
+        for child in &self.children {
+            child.update_aabb(&mut self.aabb);
+        }
+    }
 }
 
 impl Visible for Object {
     fn intersect(&self, ray: &Ray) -> Option<(Vec3, Vec3, Color)> {
+        if self.enable_aabb && !self.aabb.intersect(ray) {
+            if self.debug { println!("skipped by aabb"); }
+            return None;
+        }
         for child in &self.children {
             match child.intersect(ray) {
                 Some(rtn) => return Some(rtn),
@@ -254,6 +288,8 @@ impl Visible for Object {
         }
         return None;
     }
+
+    fn update_aabb(&self, aabb: &mut AABB) {}
 }
 
 impl Updatable for Object {
@@ -264,8 +300,9 @@ impl Updatable for Object {
                     child.update(t, dt, Some(&mv));
                 }
             }
-            None => {}
+            None => { return }
         }
+        if self.enable_aabb { self.process(); }
     }
 }
 
