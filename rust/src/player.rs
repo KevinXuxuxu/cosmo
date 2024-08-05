@@ -70,16 +70,19 @@ impl Player {
         for i in 0..self.h {
             for j in 0..self.w {
                 self.a[i][j] = ' ';
+                let mut dist = f32::MAX;
                 let ray = self.camera.get_ray(i, j);
                 for obj in &self.objects {
                     match obj.intersect(ray) {
                         Some((p, n, c)) => {
+                            let cur_dist = (p - ray.p).length();
+                            if cur_dist > dist { continue; }
+                            dist = cur_dist;
                             self.a[i][j] = if self.lights.len() > 0 {
                                 get_color(&self.lights, p, n, ray.d)
                             } else {
                                 c
                             };
-                            break;
                         }
                         None => {}
                     }
