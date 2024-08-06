@@ -66,6 +66,11 @@ impl Player {
             obj.update(self.t, self.dt, None);
         }
 
+        // Update lights
+        for light in &mut self.lights {
+            light.update(self.t, self.dt);
+        }
+
         // Render
         for i in 0..self.h {
             for j in 0..self.w {

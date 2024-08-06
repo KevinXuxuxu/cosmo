@@ -92,10 +92,12 @@ fn parse_light(parts: &[String]) -> Box<dyn Light> {
         "D" => Box::new(DirectionalLight {
             d: parse_vec3(&parts[1..4]).normalize(),
             l: parse_f32(&parts[4]),
+            m: parse_movement(&parts[5..]),
         }),
         "P" => Box::new(PointLight {
             p: parse_vec3(&parts[1..4]),
             l: parse_f32(&parts[4]),
+            m: parse_movement(&parts[5..]),
         }),
         _ => panic!("Unknown light type: {}", parts[0].as_str()),
     }
