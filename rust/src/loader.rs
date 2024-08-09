@@ -4,12 +4,12 @@ use std::io::{BufRead, BufReader};
 
 use glam::f32::Vec3;
 
+use crate::aabb::AABB;
 use crate::camera::{Camera, OrthoCamera, PerspectiveCamera};
 use crate::engine::{Object, Sphere, Thing, Torus, Triangle};
 use crate::light::{DirectionalLight, Light, PointLight};
 use crate::movement::{Movement, Rotate};
 use crate::util::{to_rad, Ray};
-use crate::aabb::AABB;
 
 fn parse_f32(part: &String) -> f32 {
     part.parse::<f32>().unwrap()
@@ -108,7 +108,7 @@ pub fn parse_file(
     w: usize,
     h: usize,
     debug: bool,
-    enable_aabb: bool
+    enable_aabb: bool,
 ) -> (Vec<Box<dyn Thing>>, Box<dyn Camera>, Vec<Box<dyn Light>>) {
     let mut points: HashMap<String, Vec3> = HashMap::new();
     let mut things: Vec<Box<dyn Thing>> = vec![];

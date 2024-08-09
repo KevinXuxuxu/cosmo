@@ -65,7 +65,7 @@ pub fn get_color(lights: &Vec<Box<dyn Light>>, p: Vec3, n: Vec3, out_d: Vec3) ->
         lum += l.get_lum(p, n, out_d);
     }
     let brightness: Vec<char> = vec![
-        '.', ',', '-', '~', ':', ';', '=', '!', '*', '#', '$', '@', 'M'
+        '.', ',', '-', '~', ':', ';', '=', '!', '*', '#', '$', '@', 'M',
     ];
     let i = (lum.min(0.99999) * (brightness.len() as f32)).floor() as usize;
     brightness[i]

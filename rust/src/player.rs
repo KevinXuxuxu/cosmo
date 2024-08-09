@@ -77,7 +77,9 @@ impl Player {
                     match obj.intersect(ray) {
                         Some((p, n, c)) => {
                             let cur_dist = (p - ray.p).length();
-                            if cur_dist > dist { continue; }
+                            if cur_dist > dist {
+                                continue;
+                            }
                             dist = cur_dist;
                             self.a[i][j] = if self.lights.len() > 0 {
                                 get_color(&self.lights, p, n, ray.d)
@@ -110,20 +112,26 @@ impl Player {
             if !self.debug {
                 println!(
                     "{}compute_time: {:>8.5}ms wait_time: {:>8.5}ms",
-                    CLEAR_LINE, compute_t * 1000., wait_t * 1000.
+                    CLEAR_LINE,
+                    compute_t * 1000.,
+                    wait_t * 1000.
                 );
             }
             total_compute += compute_t;
             total_wait += wait_t;
             self.t += self.dt;
-            if self.t > duration { break; }
+            if self.t > duration {
+                break;
+            }
             thread::sleep(Duration::from_secs_f32(wait_t));
         }
         let load = total_compute * 100. / (total_compute + total_wait);
         if !self.debug {
             println!(
                 "total_compute: {}ms total_wait: {}ms load: {}%",
-                total_compute*1000., total_wait*1000., load
+                total_compute * 1000.,
+                total_wait * 1000.,
+                load
             );
         }
     }

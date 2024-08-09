@@ -1,7 +1,7 @@
-use glam::{Vec3, Vec2};
+use glam::{Vec2, Vec3};
 
-use crate::util::{Ray, get_sphere_cord, vec2_cmp};
 use crate::movement::Movement;
+use crate::util::{get_sphere_cord, vec2_cmp, Ray};
 
 /// Function to find the orientation of the triplet (p, q, r).
 /// Returns:
@@ -27,7 +27,9 @@ fn convex_hull(mut points: Vec<Vec2>) -> Vec<Vec2> {
     // Build the lower hull
     let mut lower = Vec::new();
     for p in &points {
-        while lower.len() >= 2 && orientation(&lower[lower.len() - 2], &lower[lower.len() - 1], &p) != 2 {
+        while lower.len() >= 2
+            && orientation(&lower[lower.len() - 2], &lower[lower.len() - 1], &p) != 2
+        {
             lower.pop();
         }
         lower.push(*p);
@@ -36,7 +38,9 @@ fn convex_hull(mut points: Vec<Vec2>) -> Vec<Vec2> {
     // Build the upper hull
     let mut upper = Vec::new();
     for p in points.iter().rev() {
-        while upper.len() >= 2 && orientation(&upper[upper.len() - 2], &upper[upper.len() - 1], &p) != 2 {
+        while upper.len() >= 2
+            && orientation(&upper[upper.len() - 2], &upper[upper.len() - 1], &p) != 2
+        {
             upper.pop();
         }
         upper.push(*p);
@@ -53,7 +57,7 @@ fn convex_hull(mut points: Vec<Vec2>) -> Vec<Vec2> {
 
 fn in_convex_hull(points: &Vec<Vec2>, sd: &Vec2) -> bool {
     for i in 0..points.len() {
-        let j = (i+1)%points.len();
+        let j = (i + 1) % points.len();
         if orientation(&points[i], sd, &points[j]) == 2 {
             return false;
         }
@@ -139,7 +143,10 @@ mod tests {
         ];
         let res_1 = convex_hull(ps_1);
         assert_eq!(res_1.len(), 3);
-        assert_eq!(res_1, vec![Vec2::new(1., 1.),Vec2::new(5., 1.),Vec2::new(3., 5.)]);
+        assert_eq!(
+            res_1,
+            vec![Vec2::new(1., 1.), Vec2::new(5., 1.), Vec2::new(3., 5.)]
+        );
 
         let mut ps_2: Vec<Vec2> = vec![
             Vec2::new(3., 1.),
@@ -153,12 +160,29 @@ mod tests {
         ];
         let res_2 = convex_hull(ps_2);
         assert_eq!(res_2.len(), 6);
-        assert_eq!(res_2, vec![Vec2::new(1.0, 2.0), Vec2::new(3.0, 1.0), Vec2::new(6.0, 1.0), Vec2::new(7.0, 5.0), Vec2::new(5.0, 6.0), Vec2::new(2.0, 6.0)]);
+        assert_eq!(
+            res_2,
+            vec![
+                Vec2::new(1.0, 2.0),
+                Vec2::new(3.0, 1.0),
+                Vec2::new(6.0, 1.0),
+                Vec2::new(7.0, 5.0),
+                Vec2::new(5.0, 6.0),
+                Vec2::new(2.0, 6.0)
+            ]
+        );
     }
 
     #[test]
     fn test_fn_in_convex_hull() {
-        let ch = vec![Vec2::new(1.0, 2.0), Vec2::new(3.0, 1.0), Vec2::new(6.0, 1.0), Vec2::new(7.0, 5.0), Vec2::new(5.0, 6.0), Vec2::new(2.0, 6.0)];
+        let ch = vec![
+            Vec2::new(1.0, 2.0),
+            Vec2::new(3.0, 1.0),
+            Vec2::new(6.0, 1.0),
+            Vec2::new(7.0, 5.0),
+            Vec2::new(5.0, 6.0),
+            Vec2::new(2.0, 6.0),
+        ];
         assert!(!in_convex_hull(&ch, &Vec2::new(1., 1.)));
         assert!(!in_convex_hull(&ch, &Vec2::new(1., 4.)));
         assert!(in_convex_hull(&ch, &Vec2::new(2., 2.)));
