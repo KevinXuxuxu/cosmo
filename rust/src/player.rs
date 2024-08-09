@@ -17,7 +17,6 @@ pub struct Player {
     a: Vec<Vec<Color>>,
     t: f32,
     dt: f32,
-    dt_millis: u64,
     objects: Vec<Box<dyn Thing>>,
     camera: Box<dyn Camera>,
     lights: Vec<Box<dyn Light>>,
@@ -26,17 +25,14 @@ pub struct Player {
 
 impl Player {
     pub fn new(fr: i32, w: usize, h: usize, camera: Box<dyn Camera>, debug: bool) -> Self {
-        let empty_str = vec![' '; w];
-        let a = vec![empty_str; h];
+        let a = vec![vec![' '; w]; h];
         let dt = if debug { 1.0 } else { 1.0 / (fr as f32) };
-        let dt_millis = (dt * 1000.0) as u64;
         Player {
             w,
             h,
             a,
             t: 0.,
             dt,
-            dt_millis,
             camera,
             objects: vec![],
             lights: vec![],
@@ -97,39 +93,37 @@ impl Player {
     }
 
     pub fn run(&mut self, duration: f32) {
-        let mut total_wait: u64 = 0;
-        let mut total_compute: u64 = 0;
+        let mut total_wait: f32 = 0.;
+        let mut total_compute: f32 = 0.;
         loop {
             let start = Instant::now();
             self.update();
             if !self.debug {
                 self.render();
             }
-            let compute_t_millis = start.elapsed().as_millis() as u64;
-            self.t += self.dt;
-            let wait_t_millis = if self.dt_millis >= compute_t_millis {
-                self.dt_millis - compute_t_millis
+            let compute_t = start.elapsed().as_secs_f32();
+            let wait_t: f32 = if self.dt >= compute_t {
+                self.dt - compute_t
             } else {
-                0
+                0.
             };
             if !self.debug {
                 println!(
-                    "{}compute_time: {} wait_time: {}",
-                    CLEAR_LINE, compute_t_millis, wait_t_millis
+                    "{}compute_time: {:>8.5}ms wait_time: {:>8.5}ms",
+                    CLEAR_LINE, compute_t * 1000., wait_t * 1000.
                 );
             }
-            total_compute += compute_t_millis;
-            total_wait += wait_t_millis;
-            if self.t > duration {
-                break;
-            }
-            thread::sleep(Duration::from_millis(wait_t_millis));
+            total_compute += compute_t;
+            total_wait += wait_t;
+            self.t += self.dt;
+            if self.t > duration { break; }
+            thread::sleep(Duration::from_secs_f32(wait_t));
         }
-        let load = (total_compute as f32) * 100. / ((total_compute + total_wait) as f32);
+        let load = total_compute * 100. / (total_compute + total_wait);
         if !self.debug {
             println!(
-                "total_compute: {} total_wait: {} load: {}%",
-                total_compute, total_wait, load
+                "total_compute: {}ms total_wait: {}ms load: {}%",
+                total_compute*1000., total_wait*1000., load
             );
         }
     }
