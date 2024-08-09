@@ -260,9 +260,22 @@ pub struct Object {
 }
 
 impl Object {
-    pub fn new(children: Vec<Box<dyn Thing>>, m: Option<Box<dyn Movement>>, enable_aabb: bool, debug: bool) -> Self {
-        let mut o = Object {children, m, aabb: AABB::new(), enable_aabb, debug};
-        if enable_aabb { o.process(); }
+    pub fn new(
+        children: Vec<Box<dyn Thing>>,
+        m: Option<Box<dyn Movement>>,
+        enable_aabb: bool,
+        debug: bool,
+    ) -> Self {
+        let mut o = Object {
+            children,
+            m,
+            aabb: AABB::new(),
+            enable_aabb,
+            debug,
+        };
+        if enable_aabb {
+            o.process();
+        }
         o
     }
 
@@ -277,7 +290,9 @@ impl Object {
 impl Visible for Object {
     fn intersect(&self, ray: &Ray) -> Option<(Vec3, Vec3, Color)> {
         if self.enable_aabb && !self.aabb.intersect(ray) {
-            if self.debug { println!("skipped by aabb"); }
+            if self.debug {
+                println!("skipped by aabb");
+            }
             return None;
         }
         for child in &self.children {
@@ -300,9 +315,11 @@ impl Updatable for Object {
                     child.update(t, dt, Some(&mv));
                 }
             }
-            None => { return }
+            None => return,
         }
-        if self.enable_aabb { self.process(); }
+        if self.enable_aabb {
+            self.process();
+        }
     }
 }
 

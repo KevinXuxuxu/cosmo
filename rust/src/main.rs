@@ -3,6 +3,7 @@ use clap::Parser;
 use crate::loader::parse_file;
 use crate::player::Player;
 
+pub mod aabb;
 pub mod camera;
 pub mod engine;
 pub mod light;
@@ -10,7 +11,6 @@ pub mod loader;
 pub mod movement;
 pub mod player;
 pub mod util;
-pub mod aabb;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]

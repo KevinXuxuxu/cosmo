@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-use glam::{Vec3, Vec2};
+use glam::{Vec2, Vec3};
 
 pub type Color = char;
 
