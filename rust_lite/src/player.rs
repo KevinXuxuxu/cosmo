@@ -27,7 +27,8 @@ impl Player {
         }
     }
 
-    pub fn update(&mut self) { /* TODO */ }
+    pub fn update(&mut self) { /* TODO */
+    }
 
     pub fn play(&mut self, duration: f32) {
         let mut t = 0.;
@@ -49,7 +50,9 @@ impl Player {
             );
             */
             t += self.dt;
-            if t >= duration { break };
+            if t >= duration {
+                break;
+            };
             thread::sleep(Duration::from_secs_f32(wait_t));
         }
     }
