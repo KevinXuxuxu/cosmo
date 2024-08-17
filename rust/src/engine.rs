@@ -73,6 +73,9 @@ impl Visible for Triangle {
             return None;
         }
         let t = self.n.dot(self.a - ray.p) / denom;
+        if t < 0. {
+            return None;
+        }
         let p = ray.p + t * ray.d;
         if self.contains_point(p) {
             Some((p, self.n, self.color))
@@ -222,6 +225,9 @@ impl Visible for Torus {
             }
             t -= dt;
             n += 1;
+        }
+        if t < 0. {
+            return None;
         }
         let mut p = new_ray.p + t * new_ray.d;
         let mut o = self.R * p.with_z(0.).normalize();

@@ -82,7 +82,7 @@ impl Player {
                             }
                             dist = cur_dist;
                             self.a[i][j] = if self.lights.len() > 0 {
-                                get_color(&self.lights, p, n, ray.d)
+                                get_color(&self.lights, &self.objects, p, n, ray.d)
                             } else {
                                 c
                             };

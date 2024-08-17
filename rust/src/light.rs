@@ -1,8 +1,11 @@
 use glam::Vec3;
 
+use crate::engine::Thing;
 use crate::movement::Movement;
+use crate::util::Ray;
 
 pub trait Light {
+    fn get_ray(&self, p: Vec3) -> Ray;
     fn get_lum(&self, p: Vec3, n: Vec3, out_d: Vec3) -> f32;
     fn update(&mut self, t: f32, dt: f32);
 }
@@ -14,6 +17,10 @@ pub struct DirectionalLight {
 }
 
 impl Light for DirectionalLight {
+    fn get_ray(&self, p: Vec3) -> Ray {
+        return Ray { p: p, d: -self.d };
+    }
+
     fn get_lum(&self, _p: Vec3, n: Vec3, _out_d: Vec3) -> f32 {
         // TODO: Add surface properties (reflectiveness, etc.)
         if self.d.dot(n) > -1e-6 {
@@ -39,6 +46,13 @@ pub struct PointLight {
 }
 
 impl Light for PointLight {
+    fn get_ray(&self, p: Vec3) -> Ray {
+        return Ray {
+            p: p,
+            d: (self.p - p).normalize(),
+        };
+    }
+
     fn get_lum(&self, p: Vec3, n: Vec3, _out_d: Vec3) -> f32 {
         // TODO: Add surface properties (reflectiveness, etc.)
         let d = (p - self.p).normalize();
@@ -59,10 +73,29 @@ impl Light for PointLight {
     }
 }
 
-pub fn get_color(lights: &Vec<Box<dyn Light>>, p: Vec3, n: Vec3, out_d: Vec3) -> char {
+pub fn get_color(
+    lights: &Vec<Box<dyn Light>>,
+    objects: &Vec<Box<dyn Thing>>,
+    p: Vec3,
+    n: Vec3,
+    out_d: Vec3,
+) -> char {
     let mut lum: f32 = 0.; // TODO: Add ambient light
     for l in lights {
-        lum += l.get_lum(p, n, out_d);
+        // Check for blocking
+        let ray = l.get_ray(p + 0.001 * n);
+        let mut blocked: bool = false;
+        for obj in objects {
+            match obj.intersect(&ray) {
+                Some(_) => {
+                    blocked = true;
+                }
+                None => {}
+            }
+        }
+        if !blocked {
+            lum += l.get_lum(p, n, out_d);
+        }
     }
     let brightness: Vec<char> = vec![
         '.', ',', '-', '~', ':', ';', '=', '!', '*', '#', '$', '@', 'M',
