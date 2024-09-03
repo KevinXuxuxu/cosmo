@@ -32,6 +32,9 @@ struct Args {
 
     #[arg(long, default_value_t = false)]
     debug: bool,
+
+    #[arg(long, default_value_t = false)]
+    load_only: bool,
 }
 
 fn parse_size(v: &String) -> (usize, usize) {
@@ -54,6 +57,7 @@ fn main() {
     for light in lights {
         p.add_light(light);
     }
-
-    p.run(args.duration);
+    if !&args.load_only {
+        p.run(args.duration);
+    }
 }

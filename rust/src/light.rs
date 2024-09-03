@@ -29,7 +29,7 @@ impl Light for DirectionalLight {
         return -self.d.dot(n) * self.l;
     }
 
-    fn update(&mut self, t: f32, dt: f32) {
+    fn update(&mut self, _t: f32, dt: f32) {
         match &self.m {
             Some(mv) => {
                 mv.update_direction(dt, &mut self.d);
@@ -63,7 +63,7 @@ impl Light for PointLight {
         return -d.dot(n) * self.l / (dis * dis).max(1.);
     }
 
-    fn update(&mut self, t: f32, dt: f32) {
+    fn update(&mut self, _t: f32, dt: f32) {
         match &self.m {
             Some(mv) => {
                 mv.update_point(dt, &mut self.p);

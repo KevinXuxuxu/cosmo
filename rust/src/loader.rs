@@ -3,13 +3,13 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 use glam::f32::Vec3;
+use std::fs::OpenOptions;
 
-use crate::aabb::AABB;
 use crate::camera::{Camera, OrthoCamera, PerspectiveCamera};
 use crate::engine::{Object, Sphere, Thing, Torus, Triangle};
 use crate::light::{DirectionalLight, Light, PointLight};
 use crate::movement::{Movement, Rotate};
-use crate::util::{to_rad, Ray};
+use crate::util::{same_dir_file, to_rad, Ray};
 
 fn parse_f32(part: &String) -> f32 {
     part.parse::<f32>().unwrap()
@@ -103,6 +103,35 @@ fn parse_light(parts: &[String]) -> Box<dyn Light> {
     }
 }
 
+fn parse_stl_file(
+    parts: &[String],
+    base_path: &str,
+    enable_aabb: bool,
+    debug: bool,
+) -> Box<dyn Thing> {
+    let filename = &parts[0];
+    let filepath = same_dir_file(filename, base_path);
+    let mut file = OpenOptions::new().read(true).open(filepath).unwrap();
+    let stl = stl_io::read_stl(&mut file).unwrap();
+    println!(
+        "num vertices: {}, num faces: {}",
+        stl.vertices.len(),
+        stl.faces.len()
+    );
+
+    let mut children: Vec<Box<dyn Thing>> = vec![];
+    for face in stl.faces {
+        children.push(Box::new(Triangle::new(
+            Vec3::from_array(stl.vertices[face.vertices[0]].into()),
+            Vec3::from_array(stl.vertices[face.vertices[1]].into()),
+            Vec3::from_array(stl.vertices[face.vertices[2]].into()),
+            '.',
+        )));
+    }
+    let m = parse_movement(&parts[1..]);
+    Box::new(Object::new(children, m, enable_aabb, debug))
+}
+
 pub fn parse_file(
     filename: &str,
     w: usize,
@@ -113,11 +142,12 @@ pub fn parse_file(
     let mut points: HashMap<String, Vec3> = HashMap::new();
     let mut things: Vec<Box<dyn Thing>> = vec![];
     let mut children: Vec<Box<dyn Thing>> = vec![];
-    let file = File::open(&filename).unwrap();
-    let reader = BufReader::new(file);
     let mut camera: Option<Box<dyn Camera>> = None;
     let mut lights: Vec<Box<dyn Light>> = vec![];
     let mut m: Option<Box<dyn Movement>> = None;
+
+    let file = File::open(&filename).unwrap();
+    let reader = BufReader::new(file);
 
     for line in reader.lines() {
         let line = line.expect("fail to read line");
@@ -148,6 +178,7 @@ pub fn parse_file(
                 _ => {}
             },
             "L" => lights.push(parse_light(&parts[1..])),
+            "STL" => things.push(parse_stl_file(&parts[1..], filename, enable_aabb, debug)),
             "//" => { /* ignore comment */ }
             _ => {
                 panic!("Unknown line type: {}", line);

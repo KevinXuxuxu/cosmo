@@ -1,0 +1,7 @@
+// cargo run -- -f scenes/stl.cos -s 100,60 -d 20 --fr 5 --aabb
+//
+L D -1 -1 0 1 -
+// L P 15 15 15 400 -
+// C O -1 0 0 0 0 0 3
+C P -1 -1 -0.7 200 200 200 90 2
+STL simplify_stanford_bunny.stl R 30 0 0 0 0 0 1
