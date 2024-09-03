@@ -138,7 +138,7 @@ impl Visible for Sphere {
         }
     }
 
-    fn update_aabb(&self, aabb: &mut AABB) {}
+    fn update_aabb(&self, _aabb: &mut AABB) {}
 }
 
 impl Updatable for Sphere {
@@ -239,7 +239,7 @@ impl Visible for Torus {
         Some((p, (p - o).normalize(), self.color))
     }
 
-    fn update_aabb(&self, aabb: &mut AABB) {}
+    fn update_aabb(&self, _aabb: &mut AABB) {}
 }
 
 impl Updatable for Torus {
@@ -310,7 +310,7 @@ impl Visible for Object {
         return None;
     }
 
-    fn update_aabb(&self, aabb: &mut AABB) {}
+    fn update_aabb(&self, _aabb: &mut AABB) {}
 }
 
 impl Updatable for Object {

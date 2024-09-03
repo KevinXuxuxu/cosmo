@@ -1,6 +1,5 @@
 use glam::{Vec2, Vec3};
 
-use crate::movement::Movement;
 use crate::util::{get_sphere_cord, vec2_cmp, Ray};
 
 /// Function to find the orientation of the triplet (p, q, r).
