@@ -1,4 +1,5 @@
 use clap::Parser;
+use rayon::ThreadPoolBuilder;
 
 use crate::loader::parse_file;
 use crate::player::Player;
@@ -38,6 +39,9 @@ struct Args {
 
     #[arg(long, default_value_t = false)]
     disable_shade: bool,
+
+    #[arg(long, default_value_t = 1)]
+    n_threads: usize,
 }
 
 fn parse_size(v: &String) -> (usize, usize) {
@@ -50,6 +54,10 @@ fn parse_size(v: &String) -> (usize, usize) {
 fn main() {
     let args = Args::parse();
     let (w, h) = parse_size(&args.size);
+    ThreadPoolBuilder::new()
+        .num_threads(args.n_threads)
+        .build_global()
+        .unwrap();
 
     let (objs, camera, lights) = parse_file(&args.filename, w, h, args.debug, args.aabb);
     // Somehow setting hight to odd number will cause fuzz edge

@@ -4,9 +4,11 @@ use crate::movement::Movement;
 use crate::movement::Rotate;
 use crate::util::Ray;
 
-pub trait Camera {
+pub trait CameraInt {
     fn get_ray(&self, i: usize, j: usize) -> &Ray;
 }
+
+pub trait Camera: CameraInt + Sync {}
 
 pub struct OrthoCamera {
     // d: Vec3,
@@ -46,11 +48,15 @@ impl OrthoCamera {
     }
 }
 
-impl Camera for OrthoCamera {
+impl CameraInt for OrthoCamera {
     fn get_ray(&self, i: usize, j: usize) -> &Ray {
         &self.rays[i][j]
     }
 }
+
+unsafe impl Sync for OrthoCamera {}
+
+impl Camera for OrthoCamera {}
 
 pub struct PerspectiveCamera {
     // d: Vec3,
@@ -93,8 +99,12 @@ impl PerspectiveCamera {
     }
 }
 
-impl Camera for PerspectiveCamera {
+impl CameraInt for PerspectiveCamera {
     fn get_ray(&self, i: usize, j: usize) -> &Ray {
         &self.rays[i][j]
     }
 }
+
+unsafe impl Sync for PerspectiveCamera {}
+
+impl Camera for PerspectiveCamera {}

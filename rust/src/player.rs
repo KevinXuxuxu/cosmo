@@ -2,6 +2,8 @@ use std::thread;
 use std::time::Duration;
 use std::time::Instant;
 
+use rayon::prelude::*;
+
 use crate::camera::Camera;
 use crate::engine::Thing;
 use crate::light::{get_color, Light};
@@ -77,9 +79,9 @@ impl Player {
         }
 
         // Render
-        for i in 0..self.h {
+        self.a.par_iter_mut().enumerate().for_each(|(i, row)| {
             for j in 0..self.w {
-                self.a[i][j] = ' ';
+                row[j] = ' ';
                 let mut dist = f32::MAX;
                 let ray = self.camera.get_ray(i, j);
                 for obj in &self.objects {
@@ -90,7 +92,7 @@ impl Player {
                                 continue;
                             }
                             dist = cur_dist;
-                            self.a[i][j] = if self.lights.len() > 0 {
+                            row[j] = if self.lights.len() > 0 {
                                 get_color(
                                     &self.lights,
                                     &self.objects,
@@ -107,7 +109,7 @@ impl Player {
                     }
                 }
             }
-        }
+        });
     }
 
     pub fn run(&mut self, duration: f32) {
