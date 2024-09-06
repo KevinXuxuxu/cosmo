@@ -1,4 +1,4 @@
-// cargo run -- -f scenes/teapot/teapot.cos -s 100,60 -d 10 --fr 8 --aabb
+// cargo run -- -f scenes/teapot/teapot.cos -s 100,60 -d 10 --fr 8 --aabb --disable-shade
 //
 L D -1 -1 -4 1 -
 // L P 15 15 15 400 -

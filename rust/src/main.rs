@@ -35,6 +35,9 @@ struct Args {
 
     #[arg(long, default_value_t = false)]
     load_only: bool,
+
+    #[arg(long, default_value_t = false)]
+    disable_shade: bool,
 }
 
 fn parse_size(v: &String) -> (usize, usize) {
@@ -50,7 +53,7 @@ fn main() {
 
     let (objs, camera, lights) = parse_file(&args.filename, w, h, args.debug, args.aabb);
     // Somehow setting hight to odd number will cause fuzz edge
-    let mut p = Player::new(args.fr, w, h, camera, args.debug);
+    let mut p = Player::new(args.fr, w, h, camera, args.disable_shade, args.debug);
     for obj in objs {
         p.add_object(obj);
     }

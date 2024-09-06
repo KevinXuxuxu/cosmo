@@ -20,11 +20,19 @@ pub struct Player {
     objects: Vec<Box<dyn Thing>>,
     camera: Box<dyn Camera>,
     lights: Vec<Box<dyn Light>>,
+    disable_shade: bool,
     debug: bool,
 }
 
 impl Player {
-    pub fn new(fr: i32, w: usize, h: usize, camera: Box<dyn Camera>, debug: bool) -> Self {
+    pub fn new(
+        fr: i32,
+        w: usize,
+        h: usize,
+        camera: Box<dyn Camera>,
+        disable_shade: bool,
+        debug: bool,
+    ) -> Self {
         let a = vec![vec![' '; w]; h];
         let dt = if debug { 1.0 } else { 1.0 / (fr as f32) };
         Player {
@@ -36,6 +44,7 @@ impl Player {
             camera,
             objects: vec![],
             lights: vec![],
+            disable_shade,
             debug: debug,
         }
     }
@@ -82,7 +91,14 @@ impl Player {
                             }
                             dist = cur_dist;
                             self.a[i][j] = if self.lights.len() > 0 {
-                                get_color(&self.lights, &self.objects, p, n, ray.d)
+                                get_color(
+                                    &self.lights,
+                                    &self.objects,
+                                    p,
+                                    n,
+                                    ray.d,
+                                    self.disable_shade,
+                                )
                             } else {
                                 c
                             };

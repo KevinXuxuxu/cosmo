@@ -79,18 +79,21 @@ pub fn get_color(
     p: Vec3,
     n: Vec3,
     out_d: Vec3,
+    disable_shade: bool,
 ) -> char {
     let mut lum: f32 = 0.; // TODO: Add ambient light
     for l in lights {
         // Check for blocking
         let ray = l.get_ray(p + 0.001 * n);
         let mut blocked: bool = false;
-        for obj in objects {
-            match obj.intersect(&ray) {
-                Some(_) => {
-                    blocked = true;
+        if !disable_shade {
+            for obj in objects {
+                match obj.intersect(&ray) {
+                    Some(_) => {
+                        blocked = true;
+                    }
+                    None => {}
                 }
-                None => {}
             }
         }
         if !blocked {
