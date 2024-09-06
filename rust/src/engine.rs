@@ -16,7 +16,7 @@ pub trait Visible {
     fn update_aabb(&self, aabb: &mut AABB);
 }
 
-pub trait Thing: Updatable + Visible {}
+pub trait Thing: Updatable + Visible + Sync {}
 
 #[derive(Default)]
 pub struct Triangle {
@@ -105,6 +105,8 @@ impl Updatable for Triangle {
     }
 }
 
+unsafe impl Sync for Triangle {}
+
 impl Thing for Triangle {}
 
 pub struct Sphere {
@@ -151,6 +153,8 @@ impl Updatable for Sphere {
         };
     }
 }
+
+unsafe impl Sync for Sphere {}
 
 impl Thing for Sphere {}
 
@@ -255,6 +259,8 @@ impl Updatable for Torus {
     }
 }
 
+unsafe impl Sync for Torus {}
+
 impl Thing for Torus {}
 
 pub struct Object {
@@ -328,5 +334,7 @@ impl Updatable for Object {
         }
     }
 }
+
+unsafe impl Sync for Object {}
 
 impl Thing for Object {}

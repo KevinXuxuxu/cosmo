@@ -4,11 +4,13 @@ use crate::engine::Thing;
 use crate::movement::Movement;
 use crate::util::Ray;
 
-pub trait Light {
+pub trait LightInt {
     fn get_ray(&self, p: Vec3) -> Ray;
     fn get_lum(&self, p: Vec3, n: Vec3, out_d: Vec3) -> f32;
     fn update(&mut self, t: f32, dt: f32);
 }
+
+pub trait Light: LightInt + Sync {}
 
 pub struct DirectionalLight {
     pub d: Vec3,
@@ -16,7 +18,7 @@ pub struct DirectionalLight {
     pub m: Option<Box<dyn Movement>>,
 }
 
-impl Light for DirectionalLight {
+impl LightInt for DirectionalLight {
     fn get_ray(&self, p: Vec3) -> Ray {
         return Ray { p: p, d: -self.d };
     }
@@ -39,13 +41,17 @@ impl Light for DirectionalLight {
     }
 }
 
+unsafe impl Sync for DirectionalLight {}
+
+impl Light for DirectionalLight {}
+
 pub struct PointLight {
     pub p: Vec3,
     pub l: f32,
     pub m: Option<Box<dyn Movement>>,
 }
 
-impl Light for PointLight {
+impl LightInt for PointLight {
     fn get_ray(&self, p: Vec3) -> Ray {
         return Ray {
             p: p,
@@ -72,6 +78,10 @@ impl Light for PointLight {
         }
     }
 }
+
+unsafe impl Sync for PointLight {}
+
+impl Light for PointLight {}
 
 pub fn get_color(
     lights: &Vec<Box<dyn Light>>,

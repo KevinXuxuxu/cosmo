@@ -9,3 +9,4 @@ edition = "2021"
 glam = "0.28.0"
 clap = { version = "4.5.1", features = ["derive"] }
 stl_io = "0.8.2"
+rayon = "1.10.0"
