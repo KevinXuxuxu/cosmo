@@ -6,6 +6,7 @@ use crate::util::Ray;
 
 pub trait CameraInt {
     fn get_ray(&self, i: usize, j: usize) -> &Ray;
+    fn update(&mut self, dt: f32, m: Box<dyn Movement>);
 }
 
 pub trait Camera: CameraInt + Sync {}
@@ -51,6 +52,14 @@ impl OrthoCamera {
 impl CameraInt for OrthoCamera {
     fn get_ray(&self, i: usize, j: usize) -> &Ray {
         &self.rays[i][j]
+    }
+    fn update(&mut self, dt: f32, m: Box<dyn Movement>) {
+        for i in 0..self.rays.len() {
+            for j in 0..self.rays[0].len() {
+                m.update_point(dt, &mut self.rays[i][j].p);
+                m.update_direction(dt, &mut self.rays[i][j].d);
+            }
+        }
     }
 }
 
@@ -102,6 +111,14 @@ impl PerspectiveCamera {
 impl CameraInt for PerspectiveCamera {
     fn get_ray(&self, i: usize, j: usize) -> &Ray {
         &self.rays[i][j]
+    }
+    fn update(&mut self, dt: f32, m: Box<dyn Movement>) {
+        for i in 0..self.rays.len() {
+            for j in 0..self.rays[0].len() {
+                m.update_point(dt, &mut self.rays[i][j].p);
+                m.update_direction(dt, &mut self.rays[i][j].d);
+            }
+        }
     }
 }
 

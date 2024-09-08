@@ -1,13 +1,19 @@
 use std::thread;
 use std::time::Duration;
 use std::time::Instant;
+use std::sync::{Arc, Mutex};
+use std::io::{stdout, Write};
 
 use rayon::prelude::*;
+use glam::Vec3;
+use crossterm::{ExecutableCommand, cursor};
 
 use crate::camera::Camera;
 use crate::engine::Thing;
 use crate::light::{get_color, Light};
-use crate::util::Color;
+use crate::util::{Color, to_rad, Ray};
+use crate::control::ControlState;
+use crate::movement::Rotate;
 
 const CURSOR_UP: &str = "\x1B[F";
 const CLEAR_LINE: &str = "\x1B[K";
@@ -23,6 +29,7 @@ pub struct Player {
     camera: Box<dyn Camera>,
     lights: Vec<Box<dyn Light>>,
     disable_shade: bool,
+    control_state: Arc<Mutex<ControlState>>,
     debug: bool,
 }
 
@@ -33,6 +40,7 @@ impl Player {
         h: usize,
         camera: Box<dyn Camera>,
         disable_shade: bool,
+        control_state: Arc<Mutex<ControlState>>,
         debug: bool,
     ) -> Self {
         let a = vec![vec![' '; w]; h];
@@ -47,6 +55,7 @@ impl Player {
             objects: vec![],
             lights: vec![],
             disable_shade,
+            control_state,
             debug: debug,
         }
     }
@@ -60,10 +69,12 @@ impl Player {
     }
 
     pub fn render(&self) {
-        println!("{}", CURSOR_UP.repeat(self.h + 1));
+        let mut stdout = stdout();
+        stdout.execute(cursor::MoveUp((self.h + 1).try_into().unwrap()));
         for l in &self.a {
+            stdout.execute(cursor::MoveToColumn(0));
             let l_str: String = l.into_iter().collect();
-            println!("{}{}", CLEAR_LINE, l_str);
+            println!("{}", l_str);
         }
     }
 
@@ -76,6 +87,14 @@ impl Player {
         // Update lights
         for light in &mut self.lights {
             light.update(self.t, self.dt);
+        }
+
+        let state = self.control_state.lock().unwrap();
+        if state.left {
+            self.camera.update(self.dt, Box::new(Rotate {rad: -to_rad(60.), axis: Ray {p: Vec3::new(0., 0., 0.), d: Vec3::new(0., 0., 1.)}}));
+        }
+        if state.right {
+            self.camera.update(self.dt, Box::new(Rotate {rad: to_rad(60.), axis: Ray {p: Vec3::new(0., 0., 0.), d: Vec3::new(0., 0., 1.)}}));
         }
 
         // Render
@@ -113,6 +132,7 @@ impl Player {
     }
 
     pub fn run(&mut self, duration: f32) {
+        let mut stdout = stdout();
         let mut total_wait: f32 = 0.;
         let mut total_compute: f32 = 0.;
         loop {
@@ -128,6 +148,7 @@ impl Player {
                 0.
             };
             if !self.debug {
+                stdout.execute(cursor::MoveToColumn(0));
                 println!(
                     "{}compute_time: {:>8.5}ms wait_time: {:>8.5}ms",
                     CLEAR_LINE,
@@ -145,6 +166,7 @@ impl Player {
         }
         let load = total_compute * 100. / (total_compute + total_wait);
         if !self.debug {
+            stdout.execute(cursor::MoveToColumn(0));
             println!(
                 "total_compute: {}ms total_wait: {}ms load: {}%",
                 total_compute * 1000.,
@@ -152,5 +174,6 @@ impl Player {
                 load
             );
         }
+        stdout.execute(cursor::MoveToColumn(0));
     }
 }
