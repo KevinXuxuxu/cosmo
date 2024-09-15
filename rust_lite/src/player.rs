@@ -3,6 +3,7 @@ use std::time::Duration;
 use std::time::Instant;
 
 use crate::camera::Camera;
+use crate::light::Light;
 use crate::triangle::Triangle;
 
 const CURSOR_UP: &str = "\x1B[F";
@@ -15,10 +16,18 @@ pub struct Player {
     dt: f32,
     triangles: Vec<Triangle>,
     camera: Camera,
+    light: Light,
 }
 
 impl Player {
-    pub fn new(w: usize, h: usize, fr: usize, triangles: Vec<Triangle>, camera: Camera) -> Self {
+    pub fn new(
+        w: usize,
+        h: usize,
+        fr: usize,
+        triangles: Vec<Triangle>,
+        camera: Camera,
+        light: Light,
+    ) -> Self {
         let a = vec![vec![' '; w]; h];
         let dt = 1.0 / (fr as f32);
         Player {
@@ -28,6 +37,7 @@ impl Player {
             dt,
             triangles,
             camera,
+            light,
         }
     }
 
@@ -46,7 +56,7 @@ impl Player {
                 for t in &self.triangles {
                     match t.intersect(&self.camera.rays[i][j]) {
                         Some(_) => {
-                            self.a[i][j] = '.';
+                            self.a[i][j] = self.light.get_luminance(t.n);
                             break;
                         }
                         None => {}

@@ -1,4 +1,5 @@
 pub mod camera;
+pub mod light;
 pub mod player;
 pub mod triangle;
 pub mod util;
@@ -6,6 +7,7 @@ pub mod util;
 use glam::Vec3;
 
 use crate::camera::Camera;
+use crate::light::Light;
 use crate::player::Player;
 use crate::triangle::Triangle;
 
@@ -34,6 +36,10 @@ fn main() {
     ];
 
     let camera = Camera::new(80, 40, 0.5);
-    let mut player = Player::new(80, 40, 24, triangles, camera);
+    let light = Light {
+        d: Vec3::new(-1., -0.5, -1.).normalize(),
+        intensity: 0.6,
+    };
+    let mut player = Player::new(80, 40, 24, triangles, camera, light);
     player.play(10.);
 }

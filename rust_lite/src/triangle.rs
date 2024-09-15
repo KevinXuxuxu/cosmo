@@ -6,7 +6,7 @@ pub struct Triangle {
     a: Vec3,
     b: Vec3,
     c: Vec3,
-    n: Vec3,
+    pub n: Vec3,
 }
 
 impl Triangle {
