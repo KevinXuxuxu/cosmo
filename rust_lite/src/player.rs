@@ -2,21 +2,33 @@ use std::thread;
 use std::time::Duration;
 use std::time::Instant;
 
+use crate::camera::Camera;
+use crate::triangle::Triangle;
+
 const CURSOR_UP: &str = "\x1B[F";
 const CLEAR_LINE: &str = "\x1B[K";
 
-struct Player {
+pub struct Player {
     w: usize,
     h: usize,
     a: Vec<Vec<char>>,
     dt: f32,
+    triangles: Vec<Triangle>,
+    camera: Camera,
 }
 
 impl Player {
-    pub fn new(w: usize, h: usize, fr: usize) -> Self {
+    pub fn new(w: usize, h: usize, fr: usize, triangles: Vec<Triangle>, camera: Camera) -> Self {
         let a = vec![vec![' '; w]; h];
         let dt = 1.0 / (fr as f32);
-        Player { w, h, a, dt }
+        Player {
+            w,
+            h,
+            a,
+            dt,
+            triangles,
+            camera,
+        }
     }
 
     pub fn render(&self) {
@@ -27,7 +39,21 @@ impl Player {
         }
     }
 
-    pub fn update(&mut self) { /* TODO */
+    pub fn update(&mut self) {
+        for i in 0..self.h {
+            for j in 0..self.w {
+                self.a[i][j] = ' ';
+                for t in &self.triangles {
+                    match t.intersect(&self.camera.rays[i][j]) {
+                        Some(_) => {
+                            self.a[i][j] = '.';
+                            break;
+                        }
+                        None => {}
+                    }
+                }
+            }
+        }
     }
 
     pub fn play(&mut self, duration: f32) {

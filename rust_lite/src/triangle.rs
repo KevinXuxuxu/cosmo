@@ -1,6 +1,8 @@
 use glam::Vec3;
 
-struct Triangle {
+use crate::util::Ray;
+
+pub struct Triangle {
     a: Vec3,
     b: Vec3,
     c: Vec3,
@@ -13,15 +15,15 @@ impl Triangle {
         Triangle { a, b, c, n }
     }
 
-    pub fn intersect(&self, p: Vec3, d: Vec3) -> Option<Vec3> {
-        let n_dot_d = self.n.dot(d);
+    pub fn intersect(&self, ray: &Ray) -> Option<Vec3> {
+        let n_dot_d = self.n.dot(ray.d);
         if n_dot_d >= 0. {
             // Check for positive side
             return None;
         }
         // Solve for Q
-        let t = self.n.dot(self.a - p) / n_dot_d;
-        let q = p + t * d;
+        let t = self.n.dot(self.a - ray.p) / n_dot_d;
+        let q = ray.p + t * ray.d;
         // Check if Q is in triangle
         if (self.b - self.a).cross(q - self.a).dot(self.n) < 0.
             || (self.c - self.b).cross(q - self.b).dot(self.n) < 0.
@@ -30,5 +32,41 @@ impl Triangle {
             return None;
         }
         Some(q)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_fn_intersect() {
+        let t = Triangle::new(
+            Vec3::new(0., 0., 0.),
+            Vec3::new(0., 2., 0.),
+            Vec3::new(-1., 0., 2.),
+        );
+        let rays: Vec<Ray> = vec![
+            Ray {
+                p: Vec3::new(0., 0.5, 0.5),
+                d: Vec3::new(-1., 0., 0.),
+            },
+            Ray {
+                p: Vec3::new(0., -1., 1.),
+                d: Vec3::new(-1., 0., 0.),
+            },
+            Ray {
+                p: Vec3::new(0., 1., -1.),
+                d: Vec3::new(-1., 0., 0.),
+            },
+            Ray {
+                p: Vec3::new(0., 1.5, 1.5),
+                d: Vec3::new(-1., 0., 0.),
+            },
+        ];
+        assert_eq!(t.intersect(&rays[0]).unwrap(), Vec3::new(-0.25, 0.5, 0.5));
+        assert_eq!(t.intersect(&rays[1]), None);
+        assert_eq!(t.intersect(&rays[2]), None);
+        assert_eq!(t.intersect(&rays[3]), None);
     }
 }
