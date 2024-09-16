@@ -50,6 +50,10 @@ impl Player {
     }
 
     pub fn update(&mut self) {
+        for t in &mut self.triangles {
+            t.update(self.dt);
+        }
+
         for i in 0..self.h {
             for j in 0..self.w {
                 self.a[i][j] = ' ';

@@ -1,18 +1,19 @@
 use glam::Vec3;
 
-use crate::util::Ray;
+use crate::util::{rotate_z, Ray};
 
 pub struct Triangle {
     a: Vec3,
     b: Vec3,
     c: Vec3,
     pub n: Vec3,
+    rad: f32,
 }
 
 impl Triangle {
-    pub fn new(a: Vec3, b: Vec3, c: Vec3) -> Self {
+    pub fn new(a: Vec3, b: Vec3, c: Vec3, rad: f32) -> Self {
         let n = (b - a).cross(c - a).normalize();
-        Triangle { a, b, c, n }
+        Triangle { a, b, c, n, rad }
     }
 
     pub fn intersect(&self, ray: &Ray) -> Option<Vec3> {
@@ -32,6 +33,13 @@ impl Triangle {
             return None;
         }
         Some(q)
+    }
+
+    pub fn update(&mut self, dt: f32) {
+        rotate_z(self.rad, dt, &mut self.a);
+        rotate_z(self.rad, dt, &mut self.b);
+        rotate_z(self.rad, dt, &mut self.c);
+        self.n = (self.b - self.a).cross(self.c - self.a).normalize();
     }
 }
 
