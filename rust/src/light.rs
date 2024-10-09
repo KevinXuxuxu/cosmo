@@ -101,6 +101,7 @@ pub fn get_color(
                 match obj.intersect(&ray) {
                     Some(_) => {
                         blocked = true;
+                        break;
                     }
                     None => {}
                 }

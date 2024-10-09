@@ -87,7 +87,7 @@ impl Player {
                 for obj in &self.objects {
                     match obj.intersect(ray) {
                         Some((p, n, c)) => {
-                            let cur_dist = (p - ray.p).length();
+                            let cur_dist = (p - ray.p).dot(ray.d);
                             if cur_dist > dist {
                                 continue;
                             }
