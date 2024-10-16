@@ -3,10 +3,22 @@ name = "cosmo"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 glam = "0.28.0"
 clap = { version = "4.5.1", features = ["derive"] }
 stl_io = "0.8.2"
 rayon = "1.10.0"
+wasm-bindgen = { version = "0.2", optional = true }
+
+[lib]
+name = "cosmo"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "cosmo"
+
+[features]
+default = ["bin"]
+bin = []
+# wasm-pack build --target web --features wasm
+wasm = ["wasm-bindgen"]

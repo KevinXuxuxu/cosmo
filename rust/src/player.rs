@@ -16,7 +16,7 @@ pub struct Player {
     // fr: i32,
     w: usize,
     h: usize,
-    a: Vec<Vec<Color>>,
+    pub a: Vec<Vec<Color>>,
     t: f32,
     dt: f32,
     objects: Vec<Box<dyn Thing>>,
