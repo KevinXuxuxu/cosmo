@@ -132,12 +132,13 @@ fn parse_stl_file(
     Box::new(Object::new(children, m, enable_aabb, debug))
 }
 
-pub fn parse_file(
-    filename: &str,
+pub fn parse_scene(
+    scene: Vec<String>,
     w: usize,
     h: usize,
     debug: bool,
     enable_aabb: bool,
+    filename: Option<&str>,
 ) -> (Vec<Box<dyn Thing>>, Box<dyn Camera>, Vec<Box<dyn Light>>) {
     let mut points: HashMap<String, Vec3> = HashMap::new();
     let mut things: Vec<Box<dyn Thing>> = vec![];
@@ -146,11 +147,7 @@ pub fn parse_file(
     let mut lights: Vec<Box<dyn Light>> = vec![];
     let mut m: Option<Box<dyn Movement>> = None;
 
-    let file = File::open(&filename).unwrap();
-    let reader = BufReader::new(file);
-
-    for line in reader.lines() {
-        let line = line.expect("fail to read line");
+    for line in scene {
         let parts: Vec<String> = line.split(' ').map(|s| s.to_string()).collect();
         match parts[0].as_str() {
             "P" => {
@@ -178,7 +175,10 @@ pub fn parse_file(
                 _ => {}
             },
             "L" => lights.push(parse_light(&parts[1..])),
-            "STL" => things.push(parse_stl_file(&parts[1..], filename, enable_aabb, debug)),
+            "STL" => match filename {
+                Some(f) => things.push(parse_stl_file(&parts[1..], f, enable_aabb, debug)),
+                None => panic!("reading STL file not supported now"),
+            },
             "//" => { /* ignore comment */ }
             _ => {
                 panic!("Unknown line type: {}", line);
@@ -186,4 +186,22 @@ pub fn parse_file(
         }
     }
     (things, camera.unwrap(), lights)
+}
+
+pub fn parse_file(
+    filename: &str,
+    w: usize,
+    h: usize,
+    debug: bool,
+    enable_aabb: bool,
+) -> (Vec<Box<dyn Thing>>, Box<dyn Camera>, Vec<Box<dyn Light>>) {
+    let file = File::open(&filename).unwrap();
+    let reader = BufReader::new(file);
+    let mut scene: Vec<String> = vec![];
+
+    for line in reader.lines() {
+        scene.push(line.expect("fail to read line"));
+    }
+
+    parse_scene(scene, w, h, debug, enable_aabb, Some(filename))
 }
