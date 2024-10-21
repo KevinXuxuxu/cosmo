@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::fs::OpenOptions;
+use std::io::{BufRead, BufReader, Cursor};
 
 use glam::f32::Vec3;
-use std::fs::OpenOptions;
+use stl_io::{read_stl, IndexedMesh};
 
 use crate::camera::{Camera, OrthoCamera, PerspectiveCamera};
 use crate::engine::{Object, Sphere, Thing, Torus, Triangle};
@@ -103,16 +104,13 @@ fn parse_light(parts: &[String]) -> Box<dyn Light> {
     }
 }
 
-fn parse_stl_file(
-    parts: &[String],
-    base_path: &str,
-    enable_aabb: bool,
-    debug: bool,
-) -> Box<dyn Thing> {
-    let filename = &parts[0];
+fn parse_stl_file(filename: &str, base_path: &str) -> IndexedMesh {
     let filepath = same_dir_file(filename, base_path);
     let mut file = OpenOptions::new().read(true).open(filepath).unwrap();
-    let stl = stl_io::read_stl(&mut file).unwrap();
+    read_stl(&mut file).unwrap()
+}
+
+fn load_stl(stl: IndexedMesh, parts: &[String], enable_aabb: bool, debug: bool) -> Box<dyn Thing> {
     println!(
         "num vertices: {}, num faces: {}",
         stl.vertices.len(),
@@ -128,7 +126,7 @@ fn parse_stl_file(
             '.',
         )));
     }
-    let m = parse_movement(&parts[1..]);
+    let m = parse_movement(&parts[0..]);
     Box::new(Object::new(children, m, enable_aabb, debug))
 }
 
@@ -139,6 +137,7 @@ pub fn parse_scene(
     debug: bool,
     enable_aabb: bool,
     filename: Option<&str>,
+    stl_data: HashMap<String, Vec<u8>>,
 ) -> (Vec<Box<dyn Thing>>, Box<dyn Camera>, Vec<Box<dyn Light>>) {
     let mut points: HashMap<String, Vec3> = HashMap::new();
     let mut things: Vec<Box<dyn Thing>> = vec![];
@@ -175,10 +174,17 @@ pub fn parse_scene(
                 _ => {}
             },
             "L" => lights.push(parse_light(&parts[1..])),
-            "STL" => match filename {
-                Some(f) => things.push(parse_stl_file(&parts[1..], f, enable_aabb, debug)),
-                None => panic!("reading STL file not supported now"),
-            },
+            "STL" => {
+                let stl = match filename {
+                    Some(f) => parse_stl_file(&parts[1], f),
+                    None => {
+                        let data = stl_data.get(&parts[1]).unwrap();
+                        let mut reader = Cursor::new(data);
+                        read_stl(&mut reader).unwrap()
+                    }
+                };
+                things.push(load_stl(stl, &parts[2..], enable_aabb, debug));
+            }
             "//" => { /* ignore comment */ }
             _ => {
                 panic!("Unknown line type: {}", line);
@@ -203,5 +209,13 @@ pub fn parse_file(
         scene.push(line.expect("fail to read line"));
     }
 
-    parse_scene(scene, w, h, debug, enable_aabb, Some(filename))
+    parse_scene(
+        scene,
+        w,
+        h,
+        debug,
+        enable_aabb,
+        Some(filename),
+        HashMap::new(),
+    )
 }
