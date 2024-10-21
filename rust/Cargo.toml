@@ -11,6 +11,7 @@ rayon = "1.10.0"
 wasm-bindgen = { version = "0.2", optional = true }
 js-sys = { version = "0.3.72", optional = true }
 console_error_panic_hook = { version = "0.1", optional = true }
+wasm-bindgen-rayon = { version = "1.2", features = ["no-bundler"], optional = true}
 
 [lib]
 name = "cosmo"
@@ -24,3 +25,4 @@ default = ["bin"]
 bin = []
 # wasm-pack build --target web --features wasm
 wasm = ["wasm-bindgen", "js-sys", "console_error_panic_hook"]
+wasm_rayon = ["wasm-bindgen", "js-sys", "console_error_panic_hook", "wasm-bindgen-rayon"]

@@ -1,12 +1,16 @@
 #[cfg(target_arch = "wasm32")]
+use console_error_panic_hook;
+#[cfg(target_arch = "wasm32")]
 use js_sys::Uint8Array;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
-#[cfg(target_arch = "wasm32")]
-use console_error_panic_hook;
 
-use std::panic;
+#[cfg(target_arch = "wasm32")]
+#[cfg(feature = "wasm_rayon")]
+pub use wasm_bindgen_rayon::init_thread_pool;
+
 use std::collections::HashMap;
+use std::panic;
 
 use crate::loader::parse_scene;
 use crate::player::Player;
