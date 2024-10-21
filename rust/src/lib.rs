@@ -1,5 +1,12 @@
 #[cfg(target_arch = "wasm32")]
+use js_sys::Uint8Array;
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
+#[cfg(target_arch = "wasm32")]
+use console_error_panic_hook;
+
+use std::panic;
+use std::collections::HashMap;
 
 use crate::loader::parse_scene;
 use crate::player::Player;
@@ -14,9 +21,27 @@ pub mod player;
 pub mod util;
 
 #[cfg(target_arch = "wasm32")]
+#[wasm_bindgen(start)]
+pub fn main() {
+    panic::set_hook(Box::new(console_error_panic_hook::hook));
+}
+
+#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub struct PlayerWASM {
     player: Player,
+}
+
+#[cfg(target_arch = "wasm32")]
+fn prepare_stl_data(
+    stl_data_name: Vec<String>,
+    stl_data: Vec<Uint8Array>,
+) -> HashMap<String, Vec<u8>> {
+    let mut map = HashMap::new();
+    for i in 0..stl_data.len() {
+        map.insert(stl_data_name[i].clone(), stl_data[i].to_vec());
+    }
+    map
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -27,12 +52,21 @@ impl PlayerWASM {
         fr: i32,
         w: usize,
         h: usize,
-        debug: bool,
         enable_aabb: bool,
         disable_shade: bool,
+        stl_data_name: Vec<String>,
+        stl_data: Vec<Uint8Array>,
     ) -> Self {
-        let (objs, camera, lights) = parse_scene(scene, w, h, debug, enable_aabb, None);
-        let mut p = Player::new(fr, w, h, camera, disable_shade, debug);
+        let (objs, camera, lights) = parse_scene(
+            scene,
+            w,
+            h,
+            false,
+            enable_aabb,
+            None,
+            prepare_stl_data(stl_data_name, stl_data),
+        );
+        let mut p = Player::new(fr, w, h, camera, disable_shade, false);
         for obj in objs {
             p.add_object(obj);
         }
