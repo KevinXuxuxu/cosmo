@@ -147,6 +147,9 @@ pub fn parse_scene(
     let mut m: Option<Box<dyn Movement>> = None;
 
     for line in scene {
+        if line.starts_with("//") {
+            continue;
+        }
         let parts: Vec<String> = line.split(' ').map(|s| s.to_string()).collect();
         match parts[0].as_str() {
             "P" => {
@@ -185,7 +188,6 @@ pub fn parse_scene(
                 };
                 things.push(load_stl(stl, &parts[2..], enable_aabb, debug));
             }
-            "//" => { /* ignore comment */ }
             _ => {
                 panic!("Unknown line type: {}", line);
             }
