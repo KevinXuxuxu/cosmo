@@ -131,6 +131,7 @@ impl Player {
             &mut self.a,
             self.w,
             self.h,
+            self.disable_shade,
         );
     }
 

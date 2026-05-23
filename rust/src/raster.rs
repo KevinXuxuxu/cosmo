@@ -18,6 +18,7 @@ pub fn raster_frame(
     framebuffer: &mut Vec<Vec<Color>>,
     w: usize,
     h: usize,
+    disable_shade: bool,
 ) {
     // Clear framebuffer and depth buffer. Depth uses +infinity initially and
     // the test is "smaller z wins" (z is forward distance from the eye).
@@ -112,8 +113,10 @@ pub fn raster_frame(
 
                     framebuffer[iu][ju] = if has_lights {
                         let p_world = w0 * a_w + w1 * b_w + w2 * c_w;
-                        // disable_shade=true skips the shadow-ray loop.
-                        get_color(lights, objects, p_world, n_w, Vec3::ZERO, true)
+                        // When disable_shade is false, get_color shoots a
+                        // shadow ray per light against the same BVH-backed
+                        // Object::intersect that RT uses.
+                        get_color(lights, objects, p_world, n_w, Vec3::ZERO, disable_shade)
                     } else {
                         color
                     };
