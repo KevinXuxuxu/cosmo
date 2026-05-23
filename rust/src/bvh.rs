@@ -40,11 +40,7 @@ impl Bvh {
         build_recursive(indices, &child_aabbs)
     }
 
-    pub fn intersect(
-        &self,
-        ray: &Ray,
-        children: &[Box<dyn Thing>],
-    ) -> Option<(Vec3, Vec3, Color)> {
+    pub fn intersect(&self, ray: &Ray, children: &[Box<dyn Thing>]) -> Option<(Vec3, Vec3, Color)> {
         intersect_inner(self, ray, children).map(|(p, n, c, _)| (p, n, c))
     }
 }
