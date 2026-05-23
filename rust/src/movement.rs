@@ -1,10 +1,11 @@
 use glam::f32::Vec3;
 
-use crate::util::{get_norm_vec, Ray};
+use crate::util::{get_norm_vec, Ray, Transform};
 
 pub trait Movement {
     fn update_direction(&self, dt: f32, p: &mut Vec3);
     fn update_point(&self, dt: f32, p: &mut Vec3);
+    fn update_transform(&self, dt: f32, t: &mut Transform);
 }
 
 #[derive(Default)]
@@ -41,5 +42,8 @@ impl Movement for Rotate {
         *p = *p - self.axis.p;
         self.update_direction(dt, p);
         *p = *p + self.axis.p;
+    }
+    fn update_transform(&self, dt: f32, t: &mut Transform) {
+        t.rotate_around(self.axis.d, self.axis.p, self.rad * dt);
     }
 }

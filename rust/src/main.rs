@@ -5,6 +5,7 @@ use crate::loader::parse_file;
 use crate::player::Player;
 
 pub mod aabb;
+pub mod bvh;
 pub mod camera;
 pub mod engine;
 pub mod light;

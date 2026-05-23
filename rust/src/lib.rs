@@ -16,6 +16,7 @@ use crate::loader::parse_scene;
 use crate::player::Player;
 
 pub mod aabb;
+pub mod bvh;
 pub mod camera;
 pub mod engine;
 pub mod light;

@@ -1,9 +1,9 @@
 use glam::f32::Vec3;
 
 use crate::aabb::AABB;
+use crate::bvh::Bvh;
 use crate::movement::{Movement, Rotate};
-use crate::util::Color;
-use crate::util::Ray;
+use crate::util::{Color, Ray, Transform};
 
 const NEWTON_MAX_ITER: usize = 20;
 
@@ -266,9 +266,8 @@ impl Thing for Torus {}
 pub struct Object {
     children: Vec<Box<dyn Thing>>,
     m: Option<Box<dyn Movement>>,
-    aabb: AABB,
-    enable_aabb: bool,
-    debug: bool,
+    bvh: Option<Bvh>,
+    transform: Transform,
 }
 
 impl Object {
@@ -276,61 +275,62 @@ impl Object {
         children: Vec<Box<dyn Thing>>,
         m: Option<Box<dyn Movement>>,
         enable_aabb: bool,
-        debug: bool,
+        _debug: bool,
     ) -> Self {
-        let mut o = Object {
+        let bvh = if enable_aabb {
+            Some(Bvh::build(&children))
+        } else {
+            None
+        };
+        Object {
             children,
             m,
-            aabb: AABB::new(),
-            enable_aabb,
-            debug,
-        };
-        if enable_aabb {
-            o.process();
-        }
-        o
-    }
-
-    fn process(&mut self) {
-        self.aabb.clear();
-        for child in &self.children {
-            child.update_aabb(&mut self.aabb);
+            bvh,
+            transform: Transform::identity(),
         }
     }
 }
 
 impl Visible for Object {
     fn intersect(&self, ray: &Ray) -> Option<(Vec3, Vec3, Color)> {
-        if self.enable_aabb && !self.aabb.intersect(ray) {
-            if self.debug {
-                println!("skipped by aabb");
+        // Transform the world-space ray into the body's object space. Both the
+        // BVH and the linear-scan fallback intersect against geometry stored in
+        // object space, so the input must be converted regardless of which path
+        // runs. Quaternion rotation preserves direction length, so primitives
+        // that assume a normalized direction (Triangle, Sphere) keep working.
+        let local_ray = Ray {
+            p: self.transform.world_to_object_point(ray.p),
+            d: self.transform.world_to_object_dir(ray.d),
+        };
+        let local_hit = if let Some(bvh) = &self.bvh {
+            bvh.intersect(&local_ray, &self.children)
+        } else {
+            // --aabb off: first-hit linear scan, pre-existing semantics.
+            let mut hit = None;
+            for child in &self.children {
+                if let Some(rtn) = child.intersect(&local_ray) {
+                    hit = Some(rtn);
+                    break;
+                }
             }
-            return None;
-        }
-        for child in &self.children {
-            match child.intersect(ray) {
-                Some(rtn) => return Some(rtn),
-                _ => {}
-            }
-        }
-        return None;
+            hit
+        };
+        local_hit.map(|(p, n, c)| {
+            (
+                self.transform.object_to_world_point(p),
+                self.transform.object_to_world_dir(n),
+                c,
+            )
+        })
     }
 
     fn update_aabb(&self, _aabb: &mut AABB) {}
 }
 
 impl Updatable for Object {
-    fn update(&mut self, t: f32, dt: f32, _m: Option<&Box<dyn Movement>>) {
-        match &self.m {
-            Some(mv) => {
-                for child in &mut self.children {
-                    child.update(t, dt, Some(&mv));
-                }
-            }
-            None => return,
-        }
-        if self.enable_aabb {
-            self.process();
+    fn update(&mut self, _t: f32, dt: f32, _m: Option<&Box<dyn Movement>>) {
+        if let Some(mv) = &self.m {
+            mv.update_transform(dt, &mut self.transform);
         }
     }
 }

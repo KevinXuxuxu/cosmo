@@ -34,6 +34,37 @@ impl AABB {
         self.z[1] = f32::max(p.z, self.z[1]);
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.x[0] > self.x[1] || self.y[0] > self.y[1] || self.z[0] > self.z[1]
+    }
+
+    pub fn min(&self) -> Vec3 {
+        Vec3::new(self.x[0], self.y[0], self.z[0])
+    }
+
+    pub fn max(&self) -> Vec3 {
+        Vec3::new(self.x[1], self.y[1], self.z[1])
+    }
+
+    pub fn centroid(&self) -> Vec3 {
+        (self.min() + self.max()) * 0.5
+    }
+
+    // Expand to include `other`. No-op if `other` is empty so that callers
+    // can fold a mix of populated and never-touched AABBs without inflating
+    // the result.
+    pub fn merge(&mut self, other: &AABB) {
+        if other.is_empty() {
+            return;
+        }
+        self.x[0] = f32::min(other.x[0], self.x[0]);
+        self.x[1] = f32::max(other.x[1], self.x[1]);
+        self.y[0] = f32::min(other.y[0], self.y[0]);
+        self.y[1] = f32::max(other.y[1], self.y[1]);
+        self.z[0] = f32::min(other.z[0], self.z[0]);
+        self.z[1] = f32::max(other.z[1], self.z[1]);
+    }
+
     // Standard slab method: clip the ray against three pairs of parallel
     // planes and keep the overlapping t-interval. The branchless form below
     // handles negative ray-direction components without an explicit swap,

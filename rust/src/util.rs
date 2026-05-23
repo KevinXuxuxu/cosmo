@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
 
-use glam::{Vec2, Vec3};
+use glam::{Quat, Vec2, Vec3};
 
 pub type Color = char;
 
@@ -9,6 +9,46 @@ pub type Color = char;
 pub struct Ray {
     pub p: Vec3,
     pub d: Vec3,
+}
+
+#[derive(Clone, Copy)]
+pub struct Transform {
+    pub rotation: Quat,
+    pub translation: Vec3,
+}
+
+impl Transform {
+    pub fn identity() -> Self {
+        Transform {
+            rotation: Quat::IDENTITY,
+            translation: Vec3::ZERO,
+        }
+    }
+
+    pub fn object_to_world_point(&self, p: Vec3) -> Vec3 {
+        self.rotation * p + self.translation
+    }
+
+    pub fn object_to_world_dir(&self, d: Vec3) -> Vec3 {
+        self.rotation * d
+    }
+
+    pub fn world_to_object_point(&self, p: Vec3) -> Vec3 {
+        self.rotation.inverse() * (p - self.translation)
+    }
+
+    pub fn world_to_object_dir(&self, d: Vec3) -> Vec3 {
+        self.rotation.inverse() * d
+    }
+
+    // Compose an incremental rotation about the line (axis_pivot, axis_dir).
+    // Standard derivation: the incremental rotation R applied around `pivot` in
+    // world space turns the existing transform (Q, t) into (R*Q, R*(t-pivot)+pivot).
+    pub fn rotate_around(&mut self, axis_dir: Vec3, axis_pivot: Vec3, rad: f32) {
+        let r_inc = Quat::from_axis_angle(axis_dir, rad);
+        self.translation = r_inc * (self.translation - axis_pivot) + axis_pivot;
+        self.rotation = r_inc * self.rotation;
+    }
 }
 
 pub fn to_rad(degree: f32) -> f32 {
