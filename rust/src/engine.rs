@@ -7,6 +7,9 @@ use crate::util::{Color, Ray, Transform};
 
 const NEWTON_MAX_ITER: usize = 20;
 
+// (a, b, c) vertices, color, face normal — all in object space.
+pub type RasterTri = (Vec3, Vec3, Vec3, Color, Vec3);
+
 pub trait Updatable {
     fn update(&mut self, t: f32, dt: f32, m: Option<&Box<dyn Movement>>);
 }
@@ -14,6 +17,17 @@ pub trait Updatable {
 pub trait Visible {
     fn intersect(&self, ray: &Ray) -> Option<(Vec3, Vec3, Color)>;
     fn update_aabb(&self, aabb: &mut AABB);
+    // For the rasterizer: hand back (a, b, c, color, normal) in object space.
+    // Only Triangle returns Some; non-triangle primitives (Sphere, Torus) and
+    // composite Objects use the default `None`.
+    fn raster_tri(&self) -> Option<RasterTri> {
+        None
+    }
+    // Downcast hook used by the rasterizer to reach Object-specific data
+    // (transform, flat triangle list) without adding `Any`.
+    fn as_object(&self) -> Option<&Object> {
+        None
+    }
 }
 
 pub trait Thing: Updatable + Visible + Sync {}
@@ -88,6 +102,10 @@ impl Visible for Triangle {
         aabb.update(&self.a);
         aabb.update(&self.b);
         aabb.update(&self.c);
+    }
+
+    fn raster_tri(&self) -> Option<(Vec3, Vec3, Vec3, Color, Vec3)> {
+        Some((self.a, self.b, self.c, self.color, self.n))
     }
 }
 
@@ -268,6 +286,9 @@ pub struct Object {
     m: Option<Box<dyn Movement>>,
     bvh: Option<Bvh>,
     transform: Transform,
+    // Flat triangle list in object space for the rasterizer. Non-triangle
+    // children contribute nothing. Built once at construction.
+    raster_tris: Vec<(Vec3, Vec3, Vec3, Color, Vec3)>,
 }
 
 impl Object {
@@ -282,12 +303,22 @@ impl Object {
         } else {
             None
         };
+        let raster_tris: Vec<_> = children.iter().filter_map(|c| c.raster_tri()).collect();
         Object {
             children,
             m,
             bvh,
             transform: Transform::identity(),
+            raster_tris,
         }
+    }
+
+    pub fn transform(&self) -> &Transform {
+        &self.transform
+    }
+
+    pub fn raster_tris(&self) -> &[(Vec3, Vec3, Vec3, Color, Vec3)] {
+        &self.raster_tris
     }
 }
 
@@ -325,6 +356,10 @@ impl Visible for Object {
     }
 
     fn update_aabb(&self, _aabb: &mut AABB) {}
+
+    fn as_object(&self) -> Option<&Object> {
+        Some(self)
+    }
 }
 
 impl Updatable for Object {

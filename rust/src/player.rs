@@ -7,6 +7,7 @@ use rayon::prelude::*;
 use crate::camera::Camera;
 use crate::engine::Thing;
 use crate::light::{get_color, Light};
+use crate::raster;
 use crate::util::Color;
 
 const CURSOR_UP: &str = "\x1B[F";
@@ -24,6 +25,7 @@ pub struct Player {
     lights: Vec<Box<dyn Light>>,
     disable_shade: bool,
     debug: bool,
+    raster: bool,
 }
 
 impl Player {
@@ -34,6 +36,7 @@ impl Player {
         camera: Box<dyn Camera>,
         disable_shade: bool,
         debug: bool,
+        raster: bool,
     ) -> Self {
         let a = vec![vec![' '; w]; h];
         let dt = if debug { 1.0 } else { 1.0 / (fr as f32) };
@@ -48,6 +51,7 @@ impl Player {
             lights: vec![],
             disable_shade,
             debug: debug,
+            raster,
         }
     }
 
@@ -78,7 +82,14 @@ impl Player {
             light.update(self.t, self.dt);
         }
 
-        // Render
+        if self.raster {
+            self.raster_render();
+        } else {
+            self.rt_render();
+        }
+    }
+
+    fn rt_render(&mut self) {
         self.a.par_iter_mut().enumerate().for_each(|(i, row)| {
             for j in 0..self.w {
                 row[j] = ' ';
@@ -110,6 +121,17 @@ impl Player {
                 }
             }
         });
+    }
+
+    fn raster_render(&mut self) {
+        raster::raster_frame(
+            &self.objects,
+            &self.lights,
+            self.camera.as_ref(),
+            &mut self.a,
+            self.w,
+            self.h,
+        );
     }
 
     pub fn run(&mut self, duration: f32) {
