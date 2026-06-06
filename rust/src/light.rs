@@ -86,7 +86,7 @@ impl Light for PointLight {}
 // Brightness ramp, sparse to dense. Used by lum_to_char when --sharpen is off.
 // Expanded from the original 13-char ramp for finer gradation.
 pub const BRIGHTNESS_RAMP: &[char] = &[
-    ' ', '.', '\'', '`', ',', ':', ';', '~', '-', '+', '=', '<', '>', '!', '*', '?', 'l',
+    '.', '\'', '`', ',', ':', ';', '~', '-', '+', '=', '<', '>', '!', '*', '?', 'l',
     'i', '/', '\\', '|', '(', ')', 'o', 'x', 'X', '#', '%', '&', '$', '@', 'M',
 ];
 
