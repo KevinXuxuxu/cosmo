@@ -61,6 +61,8 @@ impl PlayerWASM {
         h: usize,
         enable_aabb: bool,
         disable_shade: bool,
+        raster: bool,
+        sharpen: bool,
         stl_data_name: Vec<String>,
         stl_data: Vec<Uint8Array>,
     ) -> Self {
@@ -73,7 +75,7 @@ impl PlayerWASM {
             None,
             prepare_stl_data(stl_data_name, stl_data),
         );
-        let mut p = Player::new(fr, w, h, camera, disable_shade, false, false, false);
+        let mut p = Player::new(fr, w, h, camera, disable_shade, false, raster, sharpen);
         for obj in objs {
             p.add_object(obj);
         }
