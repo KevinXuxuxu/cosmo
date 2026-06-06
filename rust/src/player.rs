@@ -6,8 +6,9 @@ use rayon::prelude::*;
 
 use crate::camera::Camera;
 use crate::engine::Thing;
-use crate::light::{get_color, Light};
+use crate::light::{get_color, get_lum, Light};
 use crate::raster;
+use crate::sharpen;
 use crate::util::Color;
 
 const CURSOR_UP: &str = "\x1B[F";
@@ -18,6 +19,9 @@ pub struct Player {
     w: usize,
     h: usize,
     pub a: Vec<Vec<Color>>,
+    // Per-cell 6D luminance buffer for the sharpen path. Allocated lazily —
+    // empty when sharpen is off so we don't pay the memory cost.
+    lum_samples: Vec<Vec<[f32; 6]>>,
     t: f32,
     dt: f32,
     objects: Vec<Box<dyn Thing>>,
@@ -26,6 +30,7 @@ pub struct Player {
     disable_shade: bool,
     debug: bool,
     raster: bool,
+    sharpen: bool,
 }
 
 impl Player {
@@ -37,13 +42,20 @@ impl Player {
         disable_shade: bool,
         debug: bool,
         raster: bool,
+        sharpen: bool,
     ) -> Self {
         let a = vec![vec![' '; w]; h];
+        let lum_samples = if sharpen {
+            vec![vec![[0.0_f32; 6]; w]; h]
+        } else {
+            vec![]
+        };
         let dt = if debug { 1.0 } else { 1.0 / (fr as f32) };
         Player {
             w,
             h,
             a,
+            lum_samples,
             t: 0.,
             dt,
             camera,
@@ -52,6 +64,7 @@ impl Player {
             disable_shade,
             debug: debug,
             raster,
+            sharpen,
         }
     }
 
@@ -82,11 +95,72 @@ impl Player {
             light.update(self.t, self.dt);
         }
 
-        if self.raster {
+        if self.sharpen {
+            if self.raster {
+                self.raster_render_sharpen();
+            } else {
+                self.rt_render_sharpen();
+            }
+            sharpen::finalize_frame(&self.lum_samples, &mut self.a, self.w, self.h);
+        } else if self.raster {
             self.raster_render();
         } else {
             self.rt_render();
         }
+    }
+
+    fn rt_render_sharpen(&mut self) {
+        self.lum_samples
+            .par_iter_mut()
+            .enumerate()
+            .for_each(|(i, row)| {
+                for j in 0..self.w {
+                    for k in 0..6 {
+                        let (dx, dy) = sharpen::SAMPLE_POSITIONS[k];
+                        let ray = self
+                            .camera
+                            .ray_at(i as f32 + dy, j as f32 + dx);
+                        let mut dist = f32::MAX;
+                        let mut hit_lum = 0.0_f32;
+                        let mut hit = false;
+                        for obj in &self.objects {
+                            if let Some((p, n, _c)) = obj.intersect(&ray) {
+                                let cur_dist = (p - ray.p).dot(ray.d);
+                                if cur_dist > dist {
+                                    continue;
+                                }
+                                dist = cur_dist;
+                                hit = true;
+                                hit_lum = if !self.lights.is_empty() {
+                                    get_lum(
+                                        &self.lights,
+                                        &self.objects,
+                                        p,
+                                        n,
+                                        ray.d,
+                                        self.disable_shade,
+                                    )
+                                } else {
+                                    1.0
+                                };
+                            }
+                        }
+                        row[j][k] = if hit { hit_lum } else { 0.0 };
+                    }
+                }
+            });
+    }
+
+    fn raster_render_sharpen(&mut self) {
+        raster::raster_frame_sharpen(
+            &self.objects,
+            &self.lights,
+            self.camera.as_ref(),
+            &mut self.lum_samples,
+            self.w,
+            self.h,
+            self.disable_shade,
+        );
     }
 
     fn rt_render(&mut self) {

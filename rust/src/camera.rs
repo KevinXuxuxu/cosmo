@@ -6,6 +6,10 @@ use crate::util::Ray;
 
 pub trait CameraInt {
     fn get_ray(&self, i: usize, j: usize) -> &Ray;
+    // Build a ray for fractional screen coordinates. Used by the sharpen path
+    // to sub-cell-sample at positions like (i + 0.166, j + 0.333). The integer
+    // arms (i, j) -> (i + 0.5, j + 0.5) reproduce the precomputed ray grid.
+    fn ray_at(&self, i_f: f32, j_f: f32) -> Ray;
     // Forward projection: world point -> (screen_j, screen_i, depth). Returns
     // None if the point is at or behind the near plane (depth <= 0).
     fn project(&self, p_world: Vec3) -> Option<(f32, f32, f32)>;
@@ -69,6 +73,23 @@ impl OrthoCamera {
 impl CameraInt for OrthoCamera {
     fn get_ray(&self, i: usize, j: usize) -> &Ray {
         &self.rays[i][j]
+    }
+
+    fn ray_at(&self, i_f: f32, j_f: f32) -> Ray {
+        // Same local->world transform as the constructor, but with fractional
+        // i/j so callers can sample at arbitrary sub-cell positions.
+        let z_local = ((self.h as f32) / 2. - i_f) * 2. / self.scale;
+        let y_local = (-(self.w as f32) / 2. + j_f) / self.scale;
+        let p_local = Vec3::new(0., y_local, z_local);
+        let mut p_world = p_local;
+        // Build the rotation around the +x axis (matches the constructor).
+        let rot = Rotate::get(Vec3::new(-1., 0., 0.), self.forward, Vec3::ZERO);
+        rot.update_point(1., &mut p_world);
+        p_world += self.eye;
+        Ray {
+            p: p_world,
+            d: self.forward,
+        }
     }
 
     fn project(&self, p_world: Vec3) -> Option<(f32, f32, f32)> {
@@ -149,6 +170,20 @@ impl PerspectiveCamera {
 impl CameraInt for PerspectiveCamera {
     fn get_ray(&self, i: usize, j: usize) -> &Ray {
         &self.rays[i][j]
+    }
+
+    fn ray_at(&self, i_f: f32, j_f: f32) -> Ray {
+        let z_local = ((self.h as f32) / 2. - i_f) * 2. / self.scale;
+        let y_local = (-(self.w as f32) / 2. + j_f) / self.scale;
+        let o = Vec3::new(self.focal, 0., 0.);
+        let mut p0 = Vec3::new(0., y_local, z_local);
+        let rot = Rotate::get(Vec3::new(-1., 0., 0.), self.forward, o);
+        rot.update_point(1., &mut p0);
+        p0 += self.eye - o;
+        Ray {
+            p: self.eye,
+            d: (p0 - self.eye).normalize(),
+        }
     }
 
     fn project(&self, p_world: Vec3) -> Option<(f32, f32, f32)> {

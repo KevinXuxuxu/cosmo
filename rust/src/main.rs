@@ -13,6 +13,7 @@ pub mod loader;
 pub mod movement;
 pub mod player;
 pub mod raster;
+pub mod sharpen;
 pub mod util;
 
 #[derive(Parser, Debug)]
@@ -47,6 +48,9 @@ struct Args {
 
     #[arg(long, default_value_t = false)]
     raster: bool,
+
+    #[arg(long, default_value_t = false)]
+    sharpen: bool,
 }
 
 fn parse_size(v: &String) -> (usize, usize) {
@@ -74,6 +78,7 @@ fn main() {
         args.disable_shade,
         args.debug,
         args.raster,
+        args.sharpen,
     );
     for obj in objs {
         p.add_object(obj);

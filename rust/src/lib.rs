@@ -24,6 +24,7 @@ pub mod loader;
 pub mod movement;
 pub mod player;
 pub mod raster;
+pub mod sharpen;
 pub mod util;
 
 #[cfg(target_arch = "wasm32")]
@@ -72,7 +73,7 @@ impl PlayerWASM {
             None,
             prepare_stl_data(stl_data_name, stl_data),
         );
-        let mut p = Player::new(fr, w, h, camera, disable_shade, false, false);
+        let mut p = Player::new(fr, w, h, camera, disable_shade, false, false, false);
         for obj in objs {
             p.add_object(obj);
         }

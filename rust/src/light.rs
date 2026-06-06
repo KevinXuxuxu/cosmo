@@ -83,15 +83,32 @@ unsafe impl Sync for PointLight {}
 
 impl Light for PointLight {}
 
-pub fn get_color(
+// Brightness ramp, sparse to dense. Used by lum_to_char when --sharpen is off.
+// Expanded from the original 13-char ramp for finer gradation.
+pub const BRIGHTNESS_RAMP: &[char] = &[
+    ' ', '.', '\'', '`', ',', ':', ';', '~', '-', '+', '=', '<', '>', '!', '*', '?', 'l',
+    'i', '/', '\\', '|', '(', ')', 'o', 'x', 'X', '#', '%', '&', '$', '@', 'M',
+];
+
+pub fn lum_to_char(lum: f32) -> char {
+    let n = BRIGHTNESS_RAMP.len();
+    let i = (lum.clamp(0.0, 0.99999) * n as f32).floor() as usize;
+    BRIGHTNESS_RAMP[i]
+}
+
+// Compute total luminance at a surface point, optionally checking shadow rays
+// against every object. Matches the original get_color logic minus the
+// brightness-ramp lookup so callers can either go to a char or feed a sub-cell
+// lum buffer (for --sharpen).
+pub fn get_lum(
     lights: &Vec<Box<dyn Light>>,
     objects: &Vec<Box<dyn Thing>>,
     p: Vec3,
     n: Vec3,
     out_d: Vec3,
     disable_shade: bool,
-) -> char {
-    let mut lum: f32 = 0.; // TODO: Add ambient light
+) -> f32 {
+    let mut lum: f32 = 0.;
     for l in lights {
         // Check for blocking
         let ray = l.get_ray(p + 0.001 * n);
@@ -111,9 +128,16 @@ pub fn get_color(
             lum += l.get_lum(p, n, out_d);
         }
     }
-    let brightness: Vec<char> = vec![
-        '.', ',', '-', '~', ':', ';', '=', '!', '*', '#', '$', '@', 'M',
-    ];
-    let i = (lum.min(0.99999) * (brightness.len() as f32)).floor() as usize;
-    brightness[i]
+    lum
+}
+
+pub fn get_color(
+    lights: &Vec<Box<dyn Light>>,
+    objects: &Vec<Box<dyn Thing>>,
+    p: Vec3,
+    n: Vec3,
+    out_d: Vec3,
+    disable_shade: bool,
+) -> char {
+    lum_to_char(get_lum(lights, objects, p, n, out_d, disable_shade))
 }
